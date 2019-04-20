@@ -1,4 +1,5 @@
 import os
+import re
 import random
 import discord
 from discord.ext import commands
@@ -53,8 +54,9 @@ async def page(ctx, arg1):
             current_page = int(arg1)
         img = '{}.jpg'.format(current_page)
 
-    file = discord.File(os.path.abspath(pages_dir + img), filename=img)
-    await ctx.send("Here you go!", file=file)
+    async with ctx.typing():
+        file = discord.File(os.path.abspath(pages_dir + img), filename=img)
+        await ctx.send("Here you go, page {}!".format(img.split('.')[0]), file=file)
 
 
 @bot.command()
@@ -73,8 +75,9 @@ async def frame(ctx, arg1):
             current_frame = int(arg1)
         img = '{}.jpg'.format(current_frame)
 
-    file = discord.File(os.path.abspath(frames_dir + img), filename=img)
-    await ctx.send("Here you go!", file=file)
+    async with ctx.typing():
+        file = discord.File(os.path.abspath(frames_dir + img), filename=img)
+        await ctx.send("Here you go, frame {}!".format(img.split('.')[0]), file=file)
 
 
 @bot.command()
@@ -93,7 +96,29 @@ async def gif(ctx, arg1):
             current_gif = int(arg1)
         img = '{}.gif'.format(current_gif)
 
-    file = discord.File(os.path.abspath(gif_dir + img), filename=img)
-    await ctx.send("Here you go!", file=file)
+    async with ctx.typing():
+        file = discord.File(os.path.abspath(gif_dir + img), filename=img)
+        await ctx.send("Here you go, gif {}!".format(img.split('.')[0]), file=file)
+
+
+@bot.command()
+async def spacetalk(ctx, *args):
+    vowel_list = {'a', 'e', 'i', 'o', 'u'}
+    latin_check = re.compile(r'[a-z]')
+
+    input_msg = " ".join(args).lower()
+    out_msg = ""
+    for ch in input_msg:
+        if latin_check.match(ch):
+            if ch == ' ':
+                out_msg += ' '
+            elif ch in vowel_list:
+                out_msg += '-'
+            else:
+                out_msg += '/'
+        else:
+            out_msg += ch
+
+    await ctx.send("Some spaceside once told me: `{}`".format(out_msg))
 
 bot.run(TOKEN)

@@ -46,19 +46,21 @@ def pull_comic(now_pages=300, pages_dir='pages/', frames_dir='frames/', gif_dir=
         frames = []  # for gifs
 
         print('Splitting page:', image, 'Frames done:', num)
+        gif_path = os.path.abspath(gif_dir+str(j)+'.gif')
 
         for i in range(count):
             frame_path = os.path.abspath(frames_dir + str(num) + '.jpg')
-            box = (0, i * 338, im.size[0], (i + 1) * 338)
-            region = im.crop(box)
-            region = region.resize((region.size[0], region.size[1]))
-            if not os.path.exists(frame_path):
-                region.save(frame_path, quality=90)
-                added_frames += 1
+            if (not os.path.exists(gif_path)) or (not os.path.exists(frame_path)):
+                box = (0, i * 338, im.size[0], (i + 1) * 338)
+                region = im.crop(box)
+                region = region.resize((region.size[0], region.size[1]))
+                if not os.path.exists(frame_path):
+                    region.save(frame_path, quality=90)
+                    added_frames += 1
+                region = region.convert(mode='P', palette=Image.ADAPTIVE)  # for gifs
+                frames.append(region)  # for gifs
             num += 1
-            region = region.convert(mode='P', palette=Image.ADAPTIVE)  # for gifs
-            frames.append(region)  # for gifs
-        gif_path = os.path.abspath(gif_dir+str(j)+'.gif')
+
         if not os.path.exists(gif_path):
             frames[0].save(gif_path, append_images=frames[1:], save_all=True, duration=350, loop=0)  # for gifs
             added_gifs += 1
