@@ -1,57 +1,99 @@
-from PIL import Image
-from bs4 import BeautifulSoup
 import os
-import requests
+import random
+import discord
+from discord.ext import commands
 
-if not os.path.exists(os.path.abspath('pages/')):
-    os.mkdir(os.path.abspath('pages/'))
+import skybox_fetcher
 
-if not os.path.exists(os.path.abspath('frames/')):
-    os.mkdir(os.path.abspath('frames/'))
+pages_dir = 'pages/'
+frames_dir = 'frames/'
+gif_dir = 'gif/'
 
-now_pages = 300
+with open(os.path.abspath("token.txt"), "r") as f:
+    TOKEN = f.read()
 
-for i in range(2, now_pages + 1):
-    url = 'http://skyboxcomic.com/'
-    url_comics = 'http://skyboxcomic.com/comics/'
+bot = commands.Bot(command_prefix='$')
 
-    path = os.path.abspath('pages/' + str(i) + '.jpg')
+current_page = 1
+current_frame = -1
+current_gif = 2
 
-    print('Viewing:', i)
 
-    if not os.path.exists(path):  # don't download if we have already page
-        url_r = requests.get(url_comics + str(i))
-        bs = BeautifulSoup(url_r.content)
-        print('Downloading:', i, url + bs.find_all('img', {'id': 'comicimage'})[0]['src'])  # human readable
-        r = requests.get(url + bs.find_all('img', {'id': 'comicimage'})[0]['src'], stream=True)  # get file stream
-        with open(path, 'wb') as f:  # copy paste from stackoverflow, download file
-            for chunk in r.iter_content(chunk_size=2048):
-                if chunk:
-                    f.write(chunk)
-                else:
-                    print(chunk)
+@bot.event
+async def on_ready():
+    print('Logged in as {}'.format(bot.user))
 
-num = 0
 
-for j in range(2, now_pages + 1):
-    image = '{}.jpg'.format(j)
-    im = Image.open(os.path.abspath('pages/' + image))
-    count = im.size[1] // 338
+@bot.command()
+async def hello(ctx):
+    variants = ["Hi, {}!", "Skybox waited for you, {}!", "Greetings, {} =)", "/.//. /../ {}"]
+    await ctx.send(random.choice(variants).format(ctx.author.display_name))
 
-    # frames = []  # for gifs
 
-    print('Working page:', image, 'Frames done:', num)
+@bot.command()
+async def download(ctx, arg1):
+    async with ctx.typing():
+        downloaded = skybox_fetcher.pull_comic(int(arg1))
+        await ctx.send("Downloaded and splitted {} new frames and {} new gif animations!".format(*downloaded))
 
-    for i in range(count):
-        frame_path = os.path.abspath('frames/' + str(num) + '.jpg')
-        if not os.path.exists(frame_path):
-            box = (0, i * 338, im.size[0], (i + 1) * 338)
-            region = im.crop(box)
-            region = region.resize((region.size[0], region.size[1]))
-            region.save(frame_path, quality=90)
-        num += 1
-        # region = region.convert(mode='P', palette=Image.ADAPTIVE)  # for gifs
-        # frames.append(region)  # for gifs
 
-    # frames[0].save('animation.gif', append_images=frames[1:], save_all=True, duration=250, loop=0)  # for gifs
+@bot.command()
+async def page(ctx, arg1):
+    global current_page
 
+    if arg1 in ("random", "rnd"):
+        paths = os.listdir(os.path.abspath(pages_dir))
+        img = random.choice(paths)
+    else:
+        if arg1 in ("next", "forward", "+1"):
+            current_page += 1
+        elif arg1 in ("previous", "back", "-1"):
+            current_page -= 1
+        else:
+            current_page = int(arg1)
+        img = '{}.jpg'.format(current_page)
+
+    file = discord.File(os.path.abspath(pages_dir + img), filename=img)
+    await ctx.send("Here you go!", file=file)
+
+
+@bot.command()
+async def frame(ctx, arg1):
+    global current_frame
+
+    if arg1 in ("random", "rnd"):
+        paths = os.listdir(os.path.abspath(frames_dir))
+        img = random.choice(paths)
+    else:
+        if arg1 in ("next", "forward", "+1"):
+            current_frame += 1
+        elif arg1 in ("previous", "back", "-1"):
+            current_frame -= 1
+        else:
+            current_frame = int(arg1)
+        img = '{}.jpg'.format(current_frame)
+
+    file = discord.File(os.path.abspath(frames_dir + img), filename=img)
+    await ctx.send("Here you go!", file=file)
+
+
+@bot.command()
+async def gif(ctx, arg1):
+    global current_gif
+
+    if arg1 in ("random", "rnd"):
+        paths = os.listdir(os.path.abspath(gif_dir))
+        img = random.choice(paths)
+    else:
+        if arg1 in ("next", "forward", "+1"):
+            current_gif += 1
+        elif arg1 in ("previous", "back", "-1"):
+            current_gif -= 1
+        else:
+            current_gif = int(arg1)
+        img = '{}.gif'.format(current_gif)
+
+    file = discord.File(os.path.abspath(gif_dir + img), filename=img)
+    await ctx.send("Here you go!", file=file)
+
+bot.run(TOKEN)
