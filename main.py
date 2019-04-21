@@ -10,7 +10,7 @@ pages_dir = 'pages/'
 frames_dir = 'frames/'
 gif_dir = 'gif/'
 
-with open(os.path.abspath("token.txt"), "r") as f:
+with open(os.path.abspath("token.txt"), "r") as f:  # 261184
     TOKEN = f.read()
 
 bot = commands.Bot(command_prefix='$')
@@ -119,6 +119,7 @@ async def spacetalk(ctx, *args):
         else:
             out_msg += ch
 
-    await ctx.send("Some spaceside once told me: `{}`".format(out_msg))
+    await ctx.send("`{}`".format(out_msg), )  # Some spaceside once told me:
+    await ctx.send("{}".format(input_msg), tts=True, delete_after=1)
 
-bot.run(TOKEN)
+bot.run(TOKEN.strip())
