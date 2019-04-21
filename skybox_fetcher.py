@@ -28,19 +28,8 @@ def save_gif(frames, path):
 
 
 async def pull_comic(now_pages=300, pages_dir='pages/', frames_dir='frames/', gif_dir='gif/'):
-    try:
-        loop = asyncio.get_running_loop()
-    except AttributeError:
-        loop = asyncio.get_event_loop()
-
     if not os.path.exists(os.path.abspath(pages_dir)):
         os.mkdir(os.path.abspath(pages_dir))
-
-    if not os.path.exists(os.path.abspath(frames_dir)):
-        os.mkdir(os.path.abspath(frames_dir))
-
-    if not os.path.exists(os.path.abspath(gif_dir)):
-        os.mkdir(os.path.abspath(gif_dir))
 
     url = 'http://skyboxcomic.com/'
     url_comics = 'http://skyboxcomic.com/comics/'
@@ -68,30 +57,55 @@ async def pull_comic(now_pages=300, pages_dir='pages/', frames_dir='frames/', gi
 
     for j in range(2, now_pages + 1):
         image = '{}.jpg'.format(j)
-        im = Image.open(os.path.abspath(pages_dir + image))
-        count = im.size[1] // 338
+        result = await split_page(image, num, pages_dir, frames_dir, gif_dir)
+        num += result[0]
+        added_frames += result[1]
+        added_gifs += result[2]
 
-        frames = []  # for gifs
-
-        print('Splitting page:', image, 'Frames done:', num)
-        gif_path = os.path.abspath(gif_dir+str(j)+'.gif')
-
-        for i in range(count):
-            frame_path = os.path.abspath(frames_dir + str(num) + '.jpg')
-            if (not os.path.exists(gif_path)) or (not os.path.exists(frame_path)):
-
-                region = await loop.run_in_executor(None, partial(process_page, im, i))
-
-                if not os.path.exists(frame_path):
-                    await loop.run_in_executor(None, partial(save_frame, region, frame_path))
-                    added_frames += 1
-
-                if not os.path.exists(gif_path):
-                    region = await loop.run_in_executor(None, partial(process_gif, region))
-                    frames.append(region)  # for gifs
-            num += 1
-
-        if not os.path.exists(gif_path):
-            await loop.run_in_executor(None, partial(save_gif, frames, gif_path))
-            added_gifs += 1
     return added_frames, added_gifs
+
+
+async def split_page(image_name, global_numeration=0, pages_dir='pages/', frames_dir='frames/', gif_dir='gif/'):
+
+    if not os.path.exists(os.path.abspath(frames_dir)):
+        os.mkdir(os.path.abspath(frames_dir))
+
+    if not os.path.exists(os.path.abspath(gif_dir)):
+        os.mkdir(os.path.abspath(gif_dir))
+
+    try:
+        loop = asyncio.get_running_loop()
+    except AttributeError:
+        loop = asyncio.get_event_loop()
+
+    added_frames = 0
+    added_gifs = 0
+
+    im = Image.open(os.path.abspath(pages_dir + image_name))
+    count = im.size[1] // 338
+
+    frames = []
+
+    print('Splitting page:', image_name, 'Frames done:', global_numeration, "to: ", frames_dir)
+    gif_path = os.path.abspath(gif_dir + image_name.split(".")[0] + '.gif')
+
+    for i in range(count):
+        frame_path = os.path.abspath(frames_dir + str(global_numeration) + '.jpg')
+        if (not os.path.exists(gif_path)) or (not os.path.exists(frame_path)):
+
+            region = await loop.run_in_executor(None, partial(process_page, im, i))
+
+            if not os.path.exists(frame_path):
+                await loop.run_in_executor(None, partial(save_frame, region, frame_path))
+                added_frames += 1
+
+            if not os.path.exists(gif_path):
+                region = await loop.run_in_executor(None, partial(process_gif, region))
+                frames.append(region)  # for gifs
+        global_numeration += 1
+
+    if not os.path.exists(gif_path):
+        await loop.run_in_executor(None, partial(save_gif, frames, gif_path))
+        added_gifs += 1
+
+    return global_numeration, added_frames, added_gifs
