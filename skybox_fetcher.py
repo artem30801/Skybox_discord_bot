@@ -28,7 +28,10 @@ def save_gif(frames, path):
 
 
 async def pull_comic(now_pages=300, pages_dir='pages/', frames_dir='frames/', gif_dir='gif/'):
-    loop = asyncio.get_running_loop()
+    try:
+        loop = asyncio.get_running_loop()
+    except AttributeError:
+        loop = asyncio.get_event_loop()
 
     if not os.path.exists(os.path.abspath(pages_dir)):
         os.mkdir(os.path.abspath(pages_dir))
