@@ -34,7 +34,7 @@ async def hello(ctx):
 @bot.command()
 async def download(ctx, arg1):
     async with ctx.typing():
-        downloaded = skybox_fetcher.pull_comic(int(arg1))
+        downloaded = await skybox_fetcher.pull_comic(int(arg1))
         await ctx.send("Downloaded and splitted {} new frames and {} new gif animations!".format(*downloaded))
 
 
