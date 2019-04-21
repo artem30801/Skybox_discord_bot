@@ -19,6 +19,8 @@ current_page = 1
 current_frame = -1
 current_gif = 2
 
+now_downloading = False
+
 
 @bot.event
 async def on_ready():
@@ -33,9 +35,15 @@ async def hello(ctx):
 
 @bot.command()
 async def download(ctx, arg1):
+    global now_downloading
     async with ctx.typing():
-        downloaded = await skybox_fetcher.pull_comic(int(arg1))
-        await ctx.send("Downloaded and splitted {} new frames and {} new gif animations!".format(*downloaded))
+        if not now_downloading:
+            now_downloading = True
+            downloaded = await skybox_fetcher.pull_comic(int(arg1))
+            await ctx.send("Downloaded and splitted {} new frames and {} new gif animations!".format(*downloaded))
+            now_downloading = False
+        else:
+            await ctx.send("Comic downloading process is already running, just hang out a bit!")
 
 
 @bot.command()
@@ -51,12 +59,20 @@ async def page(ctx, arg1):
         elif arg1 in ("previous", "back", "-1"):
             current_page -= 1
         else:
-            current_page = int(arg1)
+            try:
+                current_page = int(arg1)
+            except ValueError:
+                await ctx.send("Hey, that should be a page *number*! Integer, ya know")
+                return
         img = '{}.jpg'.format(current_page)
 
     async with ctx.typing():
-        file = discord.File(os.path.abspath(pages_dir + img), filename=img)
-        await ctx.send("Here you go, page {}!".format(img.split('.')[0]), file=file)
+        try:
+            file = discord.File(os.path.abspath(pages_dir + img), filename=img)
+        except FileNotFoundError:
+            await ctx.send("Sorry, but i can't find such page!")
+        else:
+            await ctx.send("Here you go, page {}!".format(img.split('.')[0]), file=file)
 
 
 @bot.command()
@@ -72,12 +88,20 @@ async def frame(ctx, arg1):
         elif arg1 in ("previous", "back", "-1"):
             current_frame -= 1
         else:
-            current_frame = int(arg1)
+            try:
+                current_frame = int(arg1)
+            except ValueError:
+                await ctx.send("Hey, that should be a frame *number*! Integer, ya know")
+                return
         img = '{}.jpg'.format(current_frame)
 
     async with ctx.typing():
-        file = discord.File(os.path.abspath(frames_dir + img), filename=img)
-        await ctx.send("Here you go, frame {}!".format(img.split('.')[0]), file=file)
+        try:
+            file = discord.File(os.path.abspath(frames_dir + img), filename=img)
+        except FileNotFoundError:
+            await ctx.send("Sorry, but i can't find such frame!")
+        else:
+            await ctx.send("Here you go, frame {}!".format(img.split('.')[0]), file=file)
 
 
 @bot.command()
@@ -93,12 +117,20 @@ async def gif(ctx, arg1):
         elif arg1 in ("previous", "back", "-1"):
             current_gif -= 1
         else:
-            current_gif = int(arg1)
+            try:
+                current_gif = int(arg1)
+            except ValueError:
+                await ctx.send("Hey, that should be a gif *number*! Integer, ya know")
+                return
         img = '{}.gif'.format(current_gif)
 
     async with ctx.typing():
-        file = discord.File(os.path.abspath(gif_dir + img), filename=img)
-        await ctx.send("Here you go, gif {}!".format(img.split('.')[0]), file=file)
+        try:
+            file = discord.File(os.path.abspath(gif_dir + img), filename=img)
+        except FileNotFoundError:
+            await ctx.send("Sorry, but i can't find such gif!")
+        else:
+            await ctx.send("Here you go, gif {}!".format(img.split('.')[0]), file=file)
 
 
 @bot.command()
@@ -120,6 +152,6 @@ async def spacetalk(ctx, *args):
             out_msg += ch
 
     await ctx.send("`{}`".format(out_msg), )  # Some spaceside once told me:
-    await ctx.send("{}".format(input_msg), tts=True, delete_after=1)
+    #await ctx.send("{}".format(input_msg), tts=True, delete_after=1)
 
 bot.run(TOKEN.strip())
