@@ -3,10 +3,15 @@ from bs4 import BeautifulSoup
 import requests
 
 import os
+import pickle
 import asyncio
 
 from functools import partial
 import aiofiles
+import collections
+
+url = 'http://skyboxcomic.com/'
+url_comics = 'comics/'
 
 
 def process_page(im, i):
@@ -27,40 +32,84 @@ def save_gif(frames, path):
     frames[0].save(path, append_images=frames[1:], save_all=True, duration=350, loop=0)
 
 
-async def pull_comic(now_pages=300, pages_dir='pages/', frames_dir='frames/', gif_dir='gif/'):
+def get_last_page():
+    url_r = requests.get(url+url_comics)
+    bs = BeautifulSoup(url_r.content, features="html.parser")
+    last = bs.find('div', {'class': 'title'}).get_text().split()[1]
+    return int(last)
+
+
+def get_arcs_names_list():
+    url_r = requests.get(url+'archive/')
+    bs = BeautifulSoup(url_r.content, features="html.parser")
+    st = bs.find_all('div', {'class': 'subtitle'})
+
+    arcs_list = []
+    for name in st:
+        arcs_list.append(name.get_text())
+
+    arcs_list[0] = "IM Break"
+    return arcs_list
+
+
+async def pull_comic(pages_dir='pages/', frames_dir='frames/', gif_dir='gif/', databse='database.txt'):
     if not os.path.exists(os.path.abspath(pages_dir)):
         os.mkdir(os.path.abspath(pages_dir))
 
-    url = 'http://skyboxcomic.com/'
-    url_comics = 'http://skyboxcomic.com/comics/'
-    for i in range(2, now_pages + 1):
+    now_pages = get_last_page()
+    print("Found {} comic pages".format(now_pages))
 
-        path = os.path.abspath(pages_dir + str(i) + '.jpg')
+    arcs = get_arcs_names_list()
 
-        print('Viewing:', i)
+    if os.path.exists(os.path.abspath(databse)):
+        with open(os.path.abspath(databse), 'rb') as f:
+            _, data = pickle.load(f)
+            print("Loaded from file. {}".format(data))
+    else:
+        data = collections.OrderedDict()
+
+    for page_number in range(2, 20 + 1):
+        print('Viewing:', page_number)
+        path = os.path.abspath(pages_dir + str(page_number) + '.jpg')
 
         if not os.path.exists(path):  # don't download if we have already page
-            url_r = requests.get(url_comics + str(i))
-            bs = BeautifulSoup(url_r.content)
-            print('Downloading:', i, url + bs.find_all('img', {'id': 'comicimage'})[0]['src'])  # human readable
-            r = requests.get(url + bs.find_all('img', {'id': 'comicimage'})[0]['src'], stream=True)  # get file stream
-            async with aiofiles.open(path, 'wb') as f:  # copy paste from stackoverflow, download file
+            url_r = requests.get(url + url_comics + str(page_number))
+            bs = BeautifulSoup(url_r.content, features="html.parser")
+
+            titles = bs.find('div', {'class': 'title'}).get_text().split()[3:]
+            if titles[0] == 'Arc':
+                data[arcs[int(titles[1])], titles[3]] = (0, 0)
+            elif titles[0] == 'IM':
+                data[arcs[0], titles[2]] = (0, 0)
+
+            img_link = bs.find_all('img', {'id': 'comicimage'})[0]['src']
+            print('Downloading:', page_number, url + img_link)
+            r = requests.get(url + img_link, stream=True)  # get file stream
+
+            async with aiofiles.open(path, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=2048):
                     if chunk:
                         await f.write(chunk)
                     else:
                         print(chunk)
-
     num = 0
     added_frames = 0
     added_gifs = 0
 
-    for j in range(2, now_pages + 1):
+    for j, (key, value) in enumerate(data.items(), 2):
         image = '{}.jpg'.format(j)
         result = await split_page(image, num, pages_dir, frames_dir, gif_dir)
-        num += result[0]
+        num = result[0]
+
+        if result[1] > 0:
+            data[key] = result[0], result[1]
+
         added_frames += result[1]
         added_gifs += result[2]
+
+    print(data)
+    with open(os.path.abspath(databse), 'wb') as f:
+        pickle.dump([arcs, data], f)
 
     return added_frames, added_gifs
 
@@ -109,3 +158,13 @@ async def split_page(image_name, global_numeration=0, pages_dir='pages/', frames
         added_gifs += 1
 
     return global_numeration, added_frames, added_gifs
+
+
+if __name__ == "__main__":
+    async def main():
+        downloaded = await pull_comic()
+        print("Downloaded and split {} new frames and {} new gif animations!".format(
+            *downloaded))
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
