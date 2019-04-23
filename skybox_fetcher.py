@@ -80,7 +80,7 @@ async def pull_comic(pages_dir='pages/', frames_dir='frames/', gif_dir='gif/', d
             titles = re.split('\s|-', bs.find('div', {'class': 'title'}).get_text())[3:]
             titles = list(filter(None, titles))
             if titles[0] == 'Arc':
-                data[arcs[int(titles[1])], titles[3]] = (0, 0)
+                data[arcs[int(titles[1])], titles[2]] = (0, 0)
             elif titles[0] == 'IM':
                 data[arcs[0], titles[2]] = (0, 0)
 
