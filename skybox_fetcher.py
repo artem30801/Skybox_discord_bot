@@ -68,7 +68,7 @@ async def pull_comic(pages_dir='pages/', frames_dir='frames/', gif_dir='gif/', d
     else:
         data = collections.OrderedDict()
 
-    for page_number in range(2, 20 + 1):
+    for page_number in range(2, now_pages + 1):
         print('Viewing:', page_number)
         path = os.path.abspath(pages_dir + str(page_number) + '.jpg')
 

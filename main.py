@@ -38,7 +38,7 @@ async def _download():
 
         now_downloading = False
         arcs_names, data = None, None
-        return downloaded[1:]
+        return downloaded
 
 
 @bot.event
