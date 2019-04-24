@@ -52,7 +52,7 @@ def post_ak(post_num, delta, act_num, frames_path=frames_dir):
             r = s.post('https://acomics.ru/action/manageAddIssue',
                        data=data, files=files, headers=headers, cookies=cookies)
             print(r.text)
-            time.sleep(5)
+            time.sleep(2)
 
 
 if __name__ == "__main__":
