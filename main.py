@@ -135,7 +135,7 @@ async def arc(ctx, *args):
     else:
         with ctx.typing():
             if frame is not None:
-                if frame > result[1]:
+                if frame+1 > result[1]:
                     await ctx.send("Frame number is out of range")
                 else:
                     ind = result[0]-result[1]+frame
@@ -225,6 +225,7 @@ async def frame(ctx, arg1):
     if arg1 in ("random", "rnd"):
         paths = os.listdir(os.path.abspath(frames_dir))
         img = random.choice(paths)
+        current_frame = int(img.split('.')[0])
     else:
         if arg1 in ("next", "forward", "+1"):
             current_frame += 1
@@ -237,25 +238,28 @@ async def frame(ctx, arg1):
                 await ctx.send("Hey, that should be a frame *number*! Integer, ya know")
                 return
         img = '{}.jpg'.format(current_frame)
-    '''
-   
-    num = int(img.split('.')[0])
 
     for i, fr in enumerate([x[0] for x in list(dt.values())]):
-        if num <= fr:
+        if current_frame+1 <= fr:
             page = i
             break
 
-    print(([x[0] for x in list(dt.values())]))
-    print(list(dt.items())[page])
-    '''
+    item = list(dt.items())[page]
+
     async with ctx.typing():
         try:
             file = discord.File(os.path.abspath(frames_dir + img), filename=img)
         except FileNotFoundError:
             await ctx.send("Sorry, but i can't find such frame!")
         else:
-            await ctx.send("Here you go, frame {}!".format(img.split('.')[0]), file=file)
+            await ctx.send("Here you go, frame №{} of Arc {} - {}: Page {} - frame {}/{}".format(
+                current_frame,
+                arcs_names.index(item[0][0]),
+                item[0][0],
+                item[0][1],
+                item[1][1] - (item[1][0] - current_frame) + 1,
+                item[1][1],
+            ), file=file)
 
 
 @bot.command()
