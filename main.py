@@ -11,6 +11,7 @@ import skybox_fetcher
 pages_dir = 'pages/'
 frames_dir = 'frames/'
 gif_dir = 'gif/'
+database_file = 'database.txt'
 
 #https://discordapp.com/api/oauth2/authorize?client_id=569075344938893322&permissions=261184&scope=bot
 with open(os.path.abspath("token.txt"), "r") as f:  # 261184
@@ -85,7 +86,7 @@ async def download(ctx):
             await ctx.send("Comic downloading process is already running, just hang out a bit!")
 
 
-def _get_database(database='database.txt'):
+def _get_database(database=database_file):
     global data, arcs_names
     if (data is None) or (arcs_names is None):
         with open(os.path.abspath(database), 'rb') as f:
@@ -188,6 +189,8 @@ async def arc(ctx, *args):
 async def page(ctx, arg1):
     global current_page
 
+    arcs, dt = _get_database()
+
     if arg1 in ("random", "rnd"):
         paths = os.listdir(os.path.abspath(pages_dir))
         img = random.choice(paths)
@@ -217,6 +220,8 @@ async def page(ctx, arg1):
 async def frame(ctx, arg1):
     global current_frame
 
+    arcs, dt = _get_database()
+
     if arg1 in ("random", "rnd"):
         paths = os.listdir(os.path.abspath(frames_dir))
         img = random.choice(paths)
@@ -232,7 +237,18 @@ async def frame(ctx, arg1):
                 await ctx.send("Hey, that should be a frame *number*! Integer, ya know")
                 return
         img = '{}.jpg'.format(current_frame)
+    '''
+   
+    num = int(img.split('.')[0])
 
+    for i, fr in enumerate([x[0] for x in list(dt.values())]):
+        if num <= fr:
+            page = i
+            break
+
+    print(([x[0] for x in list(dt.values())]))
+    print(list(dt.items())[page])
+    '''
     async with ctx.typing():
         try:
             file = discord.File(os.path.abspath(frames_dir + img), filename=img)
@@ -279,6 +295,17 @@ async def spacetalk(ctx, *args):
     out_msg = re.sub('[b-df-hyj-np-tv-xz]', '/', out_msg)
 
     await ctx.send("`{}`".format(out_msg))  # Some spaceside once told me:
+
+
+@bot.command()
+async def database(ctx):
+    async with ctx.typing():
+        try:
+            file = discord.File(os.path.abspath(database_file), filename=database_file)
+        except FileNotFoundError:
+            await ctx.send("Sorry, but i can't find mah database!")
+        else:
+            await ctx.send("Here you go, my full database!", file=file)
 
 
 bot.run(TOKEN.strip())
