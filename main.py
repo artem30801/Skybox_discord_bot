@@ -51,7 +51,6 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     #print(message.guild.name, message.channel.name, str(message.author).split('#')[1])
-    print(message.channe)
     if message.guild is not None:
         if message.guild.name == "The Skybox" and message.channel.name == "newest-updates" and str(message.author).split('#')[1] == '8517':
             print("Message from Lynx! New updates!")
