@@ -51,11 +51,13 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     #print(message.guild.name, message.channel.name, str(message.author).split('#')[1])
-    if message.guild.name == "The Skybox" and message.channel.name == "newest-updates" and str(message.author).split('#')[1] == '8517':
-        print("Message from Lynx! New updates!")
-        await message.add_reaction(emoji="👍")
-        await _download()
-        await message.add_reaction(emoji="✅")
+    print(message.channe)
+    if message.guild is not None:
+        if message.guild.name == "The Skybox" and message.channel.name == "newest-updates" and str(message.author).split('#')[1] == '8517':
+            print("Message from Lynx! New updates!")
+            await message.add_reaction(emoji="👍")
+            await _download()
+            await message.add_reaction(emoji="✅")
 
     await bot.process_commands(message)
 
@@ -194,6 +196,8 @@ async def page(ctx, arg1):
     if arg1 in ("random", "rnd"):
         paths = os.listdir(os.path.abspath(pages_dir))
         img = random.choice(paths)
+        current_page = int(img.split('.')[0])
+
     else:
         if arg1 in ("next", "forward", "+1"):
             current_page += 1
@@ -207,13 +211,21 @@ async def page(ctx, arg1):
                 return
         img = '{}.jpg'.format(current_page)
 
+    item = list(dt.items())[current_page-2]
+
     async with ctx.typing():
         try:
             file = discord.File(os.path.abspath(pages_dir + img), filename=img)
         except FileNotFoundError:
             await ctx.send("Sorry, but i can't find such page!")
         else:
-            await ctx.send("Here you go, page {}!".format(img.split('.')[0]), file=file)
+            await ctx.send("Here you go, page №{} of Arc {} - {}: Page {} ({} frames)".format(
+                current_page,
+                arcs_names.index(item[0][0]),
+                item[0][0],
+                item[0][1],
+                item[1][1],
+            ), file=file)
 
 
 @bot.command()
@@ -266,9 +278,13 @@ async def frame(ctx, arg1):
 async def gif(ctx, arg1):
     global current_gif
 
+    arcs, dt = _get_database()
+
     if arg1 in ("random", "rnd"):
         paths = os.listdir(os.path.abspath(gif_dir))
         img = random.choice(paths)
+        current_gif = int(img.split('.')[0])
+
     else:
         if arg1 in ("next", "forward", "+1"):
             current_gif += 1
@@ -288,8 +304,18 @@ async def gif(ctx, arg1):
         except FileNotFoundError:
             await ctx.send("Sorry, but i can't find such gif!")
         else:
-            await ctx.send("Here you go, gif {}!".format(img.split('.')[0]), file=file)
+            if current_gif > 2:
+                item = list(dt.items())[current_gif - 2]
 
+                await ctx.send("Here you go, gif №{} of Arc {} - {}: Page {} ({} frames)".format(
+                    current_gif,
+                    arcs_names.index(item[0][0]),
+                    item[0][0],
+                    item[0][1],
+                    item[1][1],
+                ), file=file)
+            else:
+                await ctx.send("Here you go, bonus gif №{}".format(current_gif), file=file)
 
 @bot.command()
 async def spacetalk(ctx, *args):
