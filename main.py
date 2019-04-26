@@ -191,7 +191,7 @@ async def arc(ctx, *args):
             else:
                 ind = list(dt.keys()).index((arc, page))+2
                 if is_gif:
-                    current[ctx.message.channel.id] = ("gif", result[0])
+                    current[ctx.message.channel.id] = ("gif", result[0]-result[1])
 
                     img = '{}.gif'.format(ind)
                     try:
@@ -207,7 +207,7 @@ async def arc(ctx, *args):
                             result[1],
                         ), file=file)
                 else:
-                    current[ctx.message.channel.id] = ("page", result[0])
+                    current[ctx.message.channel.id] = ("page", result[0]-result[1])
 
                     img = '{}.jpg'.format(ind)
                     try:
