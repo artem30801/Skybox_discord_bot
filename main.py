@@ -2,6 +2,7 @@ import os
 import re
 import random
 import pickle
+import collections
 
 import discord
 from discord.ext import commands
@@ -19,11 +20,16 @@ with open(os.path.abspath("token.txt"), "r") as f:  # 261184
 
 bot = commands.Bot(command_prefix=('$', '!'))
 
-current_page = 1
-current_frame = -1
-current_gif = 2
+#current_page = 1
+#current_frame = -1
+#current_gif = 2
 
-last_invoked = None
+
+def _default():
+    return "", 0
+
+
+current = collections.defaultdict(_default)
 
 now_downloading = False
 
@@ -40,6 +46,12 @@ async def _download():
         now_downloading = False
         arcs_names, data = None, None
         return downloaded
+
+
+def get_page_from_frame(dt, current_frame):
+    for i, fr in enumerate([x[0] for x in list(dt.values())]):
+        if current_frame+1 <= fr:
+            return i
 
 
 @bot.event
@@ -132,7 +144,6 @@ async def arc(ctx, *args):
     except (KeyError, ValueError, IndexError):
         async with ctx.typing():
             await ctx.send("Seems there is some mistakes in command! Maybe such page is missing!")
-
     else:
         with ctx.typing():
             if frame is not None:
@@ -140,6 +151,7 @@ async def arc(ctx, *args):
                     await ctx.send("Frame number is out of range")
                 else:
                     ind = result[0]-result[1]+frame
+                    current[ctx.message.channel.id] = ("frame", ind)
                     img = '{}.jpg'.format(ind)
                     try:
                         file = discord.File(os.path.abspath(frames_dir + img), filename=img)
@@ -157,6 +169,8 @@ async def arc(ctx, *args):
             else:
                 ind = list(dt.keys()).index((arc, page))+2
                 if is_gif:
+                    current[ctx.message.channel.id] = ("gif", result[0])
+
                     img = '{}.gif'.format(ind)
                     try:
                         file = discord.File(os.path.abspath(gif_dir + img), filename=img)
@@ -171,6 +185,8 @@ async def arc(ctx, *args):
                             result[1],
                         ), file=file)
                 else:
+                    current[ctx.message.channel.id] = ("page", result[0])
+
                     img = '{}.jpg'.format(ind)
                     try:
                         file = discord.File(os.path.abspath(pages_dir + img), filename=img)
@@ -187,30 +203,35 @@ async def arc(ctx, *args):
 
 
 @bot.command()
-async def page(ctx, arg1):
-    global current_page
-
+async def page(ctx, arg1="", arg2=""):
     arcs, dt = _get_database()
+    _current = get_page_from_frame(dt, current[ctx.message.channel.id][1]) + 2
+    if arg1:
+        if arg1 in ("random", "rnd"):
+            paths = os.listdir(os.path.abspath(pages_dir))
+            img = random.choice(paths)
+            _current = int(img.split('.')[0])
 
-    if arg1 in ("random", "rnd"):
-        paths = os.listdir(os.path.abspath(pages_dir))
-        img = random.choice(paths)
-        current_page = int(img.split('.')[0])
-
-    else:
-        if arg1 in ("next", "forward", "+1"):
-            current_page += 1
-        elif arg1 in ("previous", "back", "-1"):
-            current_page -= 1
         else:
             try:
-                current_page = int(arg1)
+                if arg1 in ("next", "forward", "+"):
+                    if arg2:
+                        _current += int(arg2)
+                    else:
+                        _current += 1
+                elif arg1 in ("previous", "back", "-"):
+                    if arg2:
+                        _current -= int(arg2)
+                    else:
+                        _current -= 1
+                else:
+                    _current = int(arg1)
             except ValueError:
-                await ctx.send("Hey, that should be a page *number*! Integer, ya know")
+                await ctx.send("Hey, that should be a *number*! Integer, ya know")
                 return
-        img = '{}.jpg'.format(current_page)
+    img = '{}.jpg'.format(_current)
 
-    item = list(dt.items())[current_page-2]
+    item = list(dt.items())[_current-2]
 
     async with ctx.typing():
         try:
@@ -218,8 +239,9 @@ async def page(ctx, arg1):
         except FileNotFoundError:
             await ctx.send("Sorry, but i can't find such page!")
         else:
+            current[ctx.message.channel.id] = ("page", item[1][0]-item[1][1])
             await ctx.send("Here you go, page №{} of Arc {} - {}: Page {} ({} frames)".format(
-                current_page,
+                _current,
                 arcs_names.index(item[0][0]),
                 item[0][0],
                 item[0][1],
@@ -228,32 +250,35 @@ async def page(ctx, arg1):
 
 
 @bot.command()
-async def frame(ctx, arg1):
-    global current_frame
-
+async def frame(ctx, arg1="", arg2=""):
     arcs, dt = _get_database()
+    _current = current[ctx.message.channel.id][1] or 0
 
-    if arg1 in ("random", "rnd"):
-        paths = os.listdir(os.path.abspath(frames_dir))
-        img = random.choice(paths)
-        current_frame = int(img.split('.')[0])
-    else:
-        if arg1 in ("next", "forward", "+1"):
-            current_frame += 1
-        elif arg1 in ("previous", "back", "-1"):
-            current_frame -= 1
+    if arg1:
+        if arg1 in ("random", "rnd"):
+            paths = os.listdir(os.path.abspath(frames_dir))
+            img = random.choice(paths)
+            _current = int(img.split('.')[0])
         else:
             try:
-                current_frame = int(arg1)
+                if arg1 in ("next", "forward", "+"):
+                    if arg2:
+                        _current += int(arg2)
+                    else:
+                        _current += 1
+                elif arg1 in ("previous", "back", "-"):
+                    if arg2:
+                        _current -= int(arg2)
+                    else:
+                        _current -= 1
+                else:
+                    _current = int(arg1)
             except ValueError:
-                await ctx.send("Hey, that should be a frame *number*! Integer, ya know")
+                await ctx.send("Hey, that should be a *number*! Integer, ya know")
                 return
-        img = '{}.jpg'.format(current_frame)
+    img = '{}.jpg'.format(_current)
 
-    for i, fr in enumerate([x[0] for x in list(dt.values())]):
-        if current_frame+1 <= fr:
-            page = i
-            break
+    page = get_page_from_frame(dt, _current)
 
     item = list(dt.items())[page]
 
@@ -263,39 +288,46 @@ async def frame(ctx, arg1):
         except FileNotFoundError:
             await ctx.send("Sorry, but i can't find such frame!")
         else:
+            current[ctx.message.channel.id] = ("frame", _current)
             await ctx.send("Here you go, frame №{} of Arc {} - {}: Page {} - frame {}/{}".format(
-                current_frame,
+                _current,
                 arcs_names.index(item[0][0]),
                 item[0][0],
                 item[0][1],
-                item[1][1] - (item[1][0] - current_frame) + 1,
+                item[1][1] - (item[1][0] - _current) + 1,
                 item[1][1],
             ), file=file)
 
 
 @bot.command()
-async def gif(ctx, arg1):
-    global current_gif
-
+async def gif(ctx, arg1="", arg2=""):
     arcs, dt = _get_database()
+    _current = get_page_from_frame(dt, current[ctx.message.channel.id][1]) + 2
 
-    if arg1 in ("random", "rnd"):
-        paths = os.listdir(os.path.abspath(gif_dir))
-        img = random.choice(paths)
-        current_gif = int(img.split('.')[0])
+    if arg1:
+        if arg1 in ("random", "rnd"):
+            paths = os.listdir(os.path.abspath(gif_dir))
+            img = random.choice(paths)
+            _current = int(img.split('.')[0])
 
-    else:
-        if arg1 in ("next", "forward", "+1"):
-            current_gif += 1
-        elif arg1 in ("previous", "back", "-1"):
-            current_gif -= 1
         else:
             try:
-                current_gif = int(arg1)
+                if arg1 in ("next", "forward", "+"):
+                    if arg2:
+                        _current += int(arg2)
+                    else:
+                        _current += 1
+                elif arg1 in ("previous", "back", "-"):
+                    if arg2:
+                        _current -= int(arg2)
+                    else:
+                        _current -= 1
+                else:
+                    _current = int(arg1)
             except ValueError:
-                await ctx.send("Hey, that should be a gif *number*! Integer, ya know")
+                await ctx.send("Hey, that should be a *number*! Integer, ya know")
                 return
-        img = '{}.gif'.format(current_gif)
+    img = '{}.gif'.format(_current)
 
     async with ctx.typing():
         try:
@@ -303,18 +335,20 @@ async def gif(ctx, arg1):
         except FileNotFoundError:
             await ctx.send("Sorry, but i can't find such gif!")
         else:
-            if current_gif > 2:
-                item = list(dt.items())[current_gif - 2]
+            if _current > 2:
+                item = list(dt.items())[_current - 2]
+                current[ctx.message.channel.id] = ("gif", item[1][0] - item[1][1])
 
                 await ctx.send("Here you go, gif №{} of Arc {} - {}: Page {} ({} frames)".format(
-                    current_gif,
+                    _current,
                     arcs_names.index(item[0][0]),
                     item[0][0],
                     item[0][1],
                     item[1][1],
                 ), file=file)
             else:
-                await ctx.send("Here you go, bonus gif №{}".format(current_gif), file=file)
+                await ctx.send("Here you go, bonus gif №{}".format(_current), file=file)
+
 
 @bot.command()
 async def spacetalk(ctx, *args):

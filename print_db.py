@@ -8,4 +8,4 @@ with open(os.path.abspath(database), 'rb') as f:
 
 
 pprint.pprint(arcs)
-pprint.pprint(data)
+pprint.pprint(list(enumerate(list(data.items()))))
