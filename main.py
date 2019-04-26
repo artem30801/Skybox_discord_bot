@@ -73,7 +73,7 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
-@bot.command()
+@bot.command(aliases=["hi", "hoi", ])
 async def hello(ctx):
     variants = \
         ["Hi, {}!",
@@ -109,6 +109,28 @@ def _get_database(database=database_file):
         arcs_names = file_arc_names
 
     return arcs_names, data
+
+
+@bot.command(name="next", aliases=["forward", "+"])
+async def _next(ctx, arg1=""):
+    _type = current[ctx.message.channel.id][0]
+    if _type == "frame":
+        await _frame(ctx, "next", arg1)
+    if _type == "page":
+        await _page(ctx, "next", arg1)
+    if _type == "gif":
+        await _gif(ctx, "next", arg1)
+
+
+@bot.command(name="back", aliases=["previous", "prev", "-"])
+async def _back(ctx, arg1=""):
+    _type = current[ctx.message.channel.id][0]
+    if _type == "frame":
+        await _frame(ctx, "back", arg1)
+    if _type == "page":
+        await _page(ctx, "back", arg1)
+    if _type == "gif":
+        await _gif(ctx, "back", arg1)
 
 
 @bot.command()
@@ -204,6 +226,10 @@ async def arc(ctx, *args):
 
 @bot.command()
 async def page(ctx, arg1="", arg2=""):
+    await _page(ctx, arg1, arg2)
+
+
+async def _page(ctx, arg1="", arg2=""):
     arcs, dt = _get_database()
     _current = get_page_from_frame(dt, current[ctx.message.channel.id][1]) + 2
     if arg1:
@@ -219,7 +245,7 @@ async def page(ctx, arg1="", arg2=""):
                         _current += int(arg2)
                     else:
                         _current += 1
-                elif arg1 in ("previous", "back", "-"):
+                elif arg1 in ("previous", "back", "prev", "-"):
                     if arg2:
                         _current -= int(arg2)
                     else:
@@ -251,6 +277,10 @@ async def page(ctx, arg1="", arg2=""):
 
 @bot.command()
 async def frame(ctx, arg1="", arg2=""):
+    await _frame(ctx, arg1, arg2)
+
+
+async def _frame(ctx, arg1="", arg2=""):
     arcs, dt = _get_database()
     _current = current[ctx.message.channel.id][1] or 0
 
@@ -266,7 +296,7 @@ async def frame(ctx, arg1="", arg2=""):
                         _current += int(arg2)
                     else:
                         _current += 1
-                elif arg1 in ("previous", "back", "-"):
+                elif arg1 in ("previous", "back", "prev", "-"):
                     if arg2:
                         _current -= int(arg2)
                     else:
@@ -301,6 +331,10 @@ async def frame(ctx, arg1="", arg2=""):
 
 @bot.command()
 async def gif(ctx, arg1="", arg2=""):
+    await _gif(ctx, arg1, arg2)
+
+
+async def _gif(ctx, arg1="", arg2=""):
     arcs, dt = _get_database()
     _current = get_page_from_frame(dt, current[ctx.message.channel.id][1]) + 2
 
@@ -317,7 +351,7 @@ async def gif(ctx, arg1="", arg2=""):
                         _current += int(arg2)
                     else:
                         _current += 1
-                elif arg1 in ("previous", "back", "-"):
+                elif arg1 in ("previous", "back", "prev", "-"):
                     if arg2:
                         _current -= int(arg2)
                     else:
