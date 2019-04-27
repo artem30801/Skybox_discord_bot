@@ -3,9 +3,11 @@ import re
 import random
 import pickle
 import collections
+import traceback
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import BucketType
 
 import skybox_fetcher
 
@@ -18,7 +20,7 @@ database_file = 'database.txt'
 with open(os.path.abspath("token.txt"), "r") as f:  # 261184
     TOKEN = f.read()
 
-bot = commands.Bot(command_prefix=('$', '!'))
+bot = commands.Bot(command_prefix=('$', '!'), case_insensitive=True)
 
 #current_page = 1
 #current_frame = -1
@@ -39,13 +41,12 @@ arcs_names = None
 
 async def _download():
     global now_downloading, arcs_names, data
-    if not now_downloading:
-        now_downloading = True
-        downloaded = await skybox_fetcher.pull_comic()
 
-        now_downloading = False
-        arcs_names, data = None, None
-        return downloaded
+    downloaded = await skybox_fetcher.pull_comic()
+
+    now_downloading = False
+    arcs_names, data = None, None
+    return downloaded
 
 
 def get_page_from_frame(dt, current_frame):
@@ -62,15 +63,29 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
+    global now_downloading
     #print(message.guild.name, message.channel.name, str(message.author).split('#')[1])
     if message.guild is not None:
         if message.guild.name == "The Skybox" and message.channel.name == "newest-updates" and str(message.author).split('#')[1] == '8517':
             print("Message from Lynx! New updates!")
-            await message.add_reaction(emoji="👍")
-            await _download()
-            await message.add_reaction(emoji="✅")
+            if not now_downloading:
+                now_downloading = True
+                await message.add_reaction(emoji="👍")
+                await _download()
+                await message.add_reaction(emoji="✅")
+            else:
+                await message.add_reaction(emoji="⌛")
 
     await bot.process_commands(message)
+
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        await ctx.send('Heyo! Not so fast! Try again in {0:.2f}s'.format(error.retry_after))
+    else:
+        print(error)
+        traceback.print_exc()
 
 
 @bot.command(aliases=["hi", "hoi", ])
@@ -90,11 +105,15 @@ async def hello(ctx):
 
 @bot.command()
 async def download(ctx):
+    global now_downloading
     async with ctx.typing():
+        print(now_downloading)
         if not now_downloading:
+            now_downloading = True
             await ctx.send("Download process started!")
             downloaded = await _download()
             await ctx.send("Downloaded and split {} new frames and {} new gif animations!".format(*downloaded))
+
         else:
             await ctx.send("Comic downloading process is already running, just hang out a bit!")
 
@@ -111,6 +130,7 @@ def _get_database(database=database_file):
     return arcs_names, data
 
 
+@discord.ext.commands.cooldown(1, 2.5, type=BucketType.channel)
 @bot.command(name="next", aliases=["forward", "+"])
 async def _next(ctx, arg1=""):
     _type = current[ctx.message.channel.id][0]
@@ -122,6 +142,7 @@ async def _next(ctx, arg1=""):
         await _gif(ctx, "next", arg1)
 
 
+@discord.ext.commands.cooldown(1, 2.5, type=BucketType.channel)
 @bot.command(name="back", aliases=["previous", "prev", "-"])
 async def _back(ctx, arg1=""):
     _type = current[ctx.message.channel.id][0]
@@ -133,6 +154,7 @@ async def _back(ctx, arg1=""):
         await _gif(ctx, "back", arg1)
 
 
+@discord.ext.commands.cooldown(1, 2.5, type=BucketType.channel)
 @bot.command()
 async def arc(ctx, *args):
     args = list(args)
@@ -141,12 +163,12 @@ async def arc(ctx, *args):
     is_gif = False
     try:
         if args[0].isdigit():
-            arc = arcs[int(args[0].lstrip("0") or 0)]
+            arc_name = arcs[int(args[0].lstrip("0") or 0)]
         else:
             if args[0].lower() == 'im':
-                arc = arcs[0]
+                arc_name = arcs[0]
             else:
-                arc = args[0].lower().capitalize()
+                arc_name = args[0].lower().capitalize()
 
         if len(args) >= 2:
             if not args[1].isdigit():
@@ -160,9 +182,15 @@ async def arc(ctx, *args):
                     frame = int(args[2].lstrip("0"))-1
                 else:
                     is_gif = True
+            result = dt[(arc_name, page)]
         else:
             page = "Title"
-        result = dt[(arc, page)]
+            try:
+                result = dt[(arc_name, page)]
+            except KeyError:
+                page = "Intro"
+                result = dt[(arc_name, page)]
+
     except (KeyError, ValueError, IndexError):
         async with ctx.typing():
             await ctx.send("Seems there is some mistakes in command! Maybe such page is missing!")
@@ -182,14 +210,14 @@ async def arc(ctx, *args):
                     else:
                         await ctx.send("Here you go, frame №{} of Arc {} - {}: Page {} - frame {}/{}".format(
                             ind,
-                            arcs_names.index(arc),
-                            arc,
+                            arcs_names.index(arc_name),
+                            arc_name,
                             page,
                             frame+1,
                             result[1],
                         ), file=file)
             else:
-                ind = list(dt.keys()).index((arc, page))+2
+                ind = list(dt.keys()).index((arc_name, page))+2
                 if is_gif:
                     current[ctx.message.channel.id] = ("gif", result[0]-result[1])
 
@@ -201,8 +229,8 @@ async def arc(ctx, *args):
                     else:
                         await ctx.send("Here you go, gif №{} of Arc {} - {}: Page {} ({} frames)".format(
                             ind,
-                            arcs_names.index(arc),
-                            arc,
+                            arcs_names.index(arc_name),
+                            arc_name,
                             page,
                             result[1],
                         ), file=file)
@@ -217,13 +245,14 @@ async def arc(ctx, *args):
                     else:
                         await ctx.send("Here you go, page №{} of Arc {} - {}: Page {} ({} frames)".format(
                             ind,
-                            arcs_names.index(arc),
-                            arc,
+                            arcs_names.index(arc_name),
+                            arc_name,
                             page,
                             result[1],
                         ), file=file)
 
 
+@discord.ext.commands.cooldown(1, 2.5, type=BucketType.channel)
 @bot.command()
 async def page(ctx, arg1="", arg2=""):
     await _page(ctx, arg1, arg2)
@@ -276,6 +305,7 @@ async def _page(ctx, arg1="", arg2=""):
 
 
 @bot.command()
+@discord.ext.commands.cooldown(1, 2.5, type=BucketType.channel)
 async def frame(ctx, arg1="", arg2=""):
     await _frame(ctx, arg1, arg2)
 
@@ -329,6 +359,7 @@ async def _frame(ctx, arg1="", arg2=""):
             ), file=file)
 
 
+@discord.ext.commands.cooldown(1, 2.5, type=BucketType.channel)
 @bot.command()
 async def gif(ctx, arg1="", arg2=""):
     await _gif(ctx, arg1, arg2)
@@ -385,11 +416,12 @@ async def _gif(ctx, arg1="", arg2=""):
 
 
 @bot.command()
-async def spacetalk(ctx, *args):
-    input_msg = " ".join(args).lower()
-    out_msg = re.sub('[aeiou]', '-', input_msg)
+async def spacetalk(ctx, *, message: str):
+    out_msg = re.sub('[aeiou]', '-', message)
+    out_msg = re.sub('[аеёиоуыэюяй]', '-', out_msg)
     out_msg = re.sub('--', '—', out_msg)
     out_msg = re.sub('[b-df-hyj-np-tv-xz]', '/', out_msg)
+    out_msg = re.sub('[кнгшщзхфвпрлдчсмтжбцьъ]', '/', out_msg)
 
     await ctx.send("`{}`".format(out_msg))  # Some spaceside once told me:
 

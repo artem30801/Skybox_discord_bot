@@ -94,6 +94,9 @@ async def pull_comic(pages_dir='pages/', frames_dir='frames/', gif_dir='gif/', d
                         await f.write(chunk)
                     else:
                         print(chunk)
+
+        await asyncio.sleep(0)
+
     num = 0
     added_frames = 0
     added_gifs = 0
@@ -108,6 +111,7 @@ async def pull_comic(pages_dir='pages/', frames_dir='frames/', gif_dir='gif/', d
 
         added_frames += result[1]
         added_gifs += result[2]
+        await asyncio.sleep(0)
 
     print(data)
     with open(os.path.abspath(databse), 'wb') as f:
@@ -154,6 +158,7 @@ async def split_page(image_name, global_numeration=0, pages_dir='pages/', frames
                 region = await loop.run_in_executor(None, partial(process_gif, region))
                 frames.append(region)  # for gifs
         global_numeration += 1
+        await asyncio.sleep(0)
 
     if not os.path.exists(gif_path):
         await loop.run_in_executor(None, partial(save_gif, frames, gif_path))
