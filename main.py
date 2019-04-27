@@ -418,6 +418,7 @@ async def _gif(ctx, arg1="", arg2=""):
 
 @bot.command()
 async def spacetalk(ctx, *, message: str):
+    message = message.lower()
     out_msg = re.sub('[aeiou]', '-', message)
     out_msg = re.sub('[аеёиоуыэюяй]', '-', out_msg)
     out_msg = re.sub('--', '—', out_msg)
