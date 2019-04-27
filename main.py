@@ -44,7 +44,6 @@ async def _download():
 
     downloaded = await skybox_fetcher.pull_comic()
 
-    now_downloading = False
     arcs_names, data = None, None
     return downloaded
 
@@ -73,6 +72,7 @@ async def on_message(message):
                 await message.add_reaction(emoji="👍")
                 await _download()
                 await message.add_reaction(emoji="✅")
+                now_downloading = False
             else:
                 await message.add_reaction(emoji="⌛")
 
@@ -113,6 +113,7 @@ async def download(ctx):
             await ctx.send("Download process started!")
             downloaded = await _download()
             await ctx.send("Downloaded and split {} new frames and {} new gif animations!".format(*downloaded))
+            now_downloading = False
 
         else:
             await ctx.send("Comic downloading process is already running, just hang out a bit!")
