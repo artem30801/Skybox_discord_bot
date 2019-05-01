@@ -6,8 +6,10 @@ import collections
 import traceback
 
 import discord
+import statistics
 from discord.ext import commands
 from discord.ext.commands import BucketType
+from discord.utils import get
 
 import skybox_fetcher
 
@@ -15,6 +17,8 @@ pages_dir = 'pages/'
 frames_dir = 'frames/'
 gif_dir = 'gif/'
 database_file = 'database.txt'
+
+user_votes_file = 'votes.txt'
 
 #https://discordapp.com/api/oauth2/authorize?client_id=569075344938893322&permissions=261184&scope=bot
 with open(os.path.abspath("token.txt"), "r") as f:  # 261184
@@ -83,6 +87,10 @@ async def on_message(message):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.send('Heyo! Not so fast! Try again in {0:.2f}s'.format(error.retry_after))
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send("Sorry, but your arguments are invalid!")
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("Sorry, but you missed required argument!")
     else:
         print(error)
         traceback.print_exc()
@@ -416,6 +424,71 @@ async def _gif(ctx, arg1="", arg2=""):
                 await ctx.send("Here you go, bonus gif №{}".format(_current), file=file)
 
 
+def add_to_voted(index, value, user):
+    if os.path.exists(os.path.abspath(user_votes_file)):
+        with open(os.path.abspath(user_votes_file), 'rb') as f:
+            votes = pickle.load(f)
+    else:
+        votes = collections.defaultdict(dict)
+
+    votes[index].update({user: value})
+
+    with open(os.path.abspath(user_votes_file), 'wb') as f:
+        pickle.dump(votes, f)
+
+    print(votes)
+    return votes[index]
+
+
+@bot.command(aliases=["v"])
+async def vote(ctx, timing: int):
+    if current[ctx.message.channel.id][0] == "frame":
+        if timing in range(50, 5000+1):
+            _current = current[ctx.message.channel.id][1]
+            voted = add_to_voted(_current, timing, ctx.author.id)
+
+            current_votes = ""
+            for key, val in voted.items():
+                name = get(bot.get_all_members(), id=key)
+                current_votes += "\n {}: {} ms ".format(name.display_name or name, val)
+            avg_votes = "\n *Average vote*: {} ms".format(round(statistics.mean(voted.values())))
+
+            await ctx.send("Thanks! You are successfully voted for frame {}".format(_current))
+            await ctx.send("Current votes are:"+current_votes+avg_votes)
+        else:
+            await ctx.send("That timing doesn't seem right... Try using range of 50 - 5000 milliseconds (1/1000 of second)")
+    else:
+        await ctx.send("Hey! You must vote for in-animation duration of certain *frame*!")
+
+
+@discord.ext.commands.cooldown(1, 6, type=BucketType.default)
+@bot.command(aliases=["regen", "r"])
+async def regen_gif(ctx, arg1=""):
+    arcs, dt = _get_database()
+    if arg1:
+        try:
+            _current = int(arg1)
+        except ValueError:
+            await ctx.send("Hey, that should be a gif *number*!")
+            return
+    else:
+        _current = get_page_from_frame(dt, current[ctx.message.channel.id][1]) + 2
+
+    item = list(dt.items())[_current - 2]
+    frame_num = item[1][0] - item[1][1]
+
+    img = '{}.gif'.format(_current)
+    try:
+        os.remove(os.path.abspath(gif_dir+img))
+    except FileNotFoundError:
+        pass
+
+    await skybox_fetcher.split_page('{}.jpg'.format(_current), frame_num, pages_dir, frames_dir, gif_dir, True)
+    print("Gif {} regenerated".format(_current))
+    await ctx.send("Gif {} successfully regenerated!".format(_current))
+    await _gif(ctx, str(_current))
+
+
 @bot.command()
 async def spacetalk(ctx, *, message: str):
     message = message.lower()
@@ -428,7 +501,7 @@ async def spacetalk(ctx, *, message: str):
     await ctx.send("`{}`".format(out_msg))  # Some spaceside once told me:
 
 
-@bot.command()
+@bot.command(hidden=True)
 async def database(ctx):
     async with ctx.typing():
         try:
@@ -440,5 +513,3 @@ async def database(ctx):
 
 
 bot.run(TOKEN.strip())
-
-# list(mydict.keys())[list(mydict.values()).index(somevalue)]

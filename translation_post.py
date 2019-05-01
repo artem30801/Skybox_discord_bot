@@ -4,7 +4,7 @@ import time
 import requests
 
 frames_dir = 'translated_frames/'
-post_num_delta = 4
+post_num_delta = 5
 
 cookies = {
     'unpin': 'false',
@@ -25,14 +25,18 @@ headers = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,imag
                          'Chrome/73.0.3683.103 Safari/537.36'}
 
 
-def post_ak(post_num, delta, act_num, frames_path=frames_dir):
+def post_ak(post_num, delta, act_num, frames_path=frames_dir, is_im=False):
+    if not is_im:
+        name = "Акт {} - {}".format(act_num, str(post_num - delta).zfill(2))
+    else:
+        name = "Акт {} - Чат-вставка {}".format(act_num, str(is_im).zfill(2))
     data = {
         "altText": "",
         "description": '<hr />'
                         '<p>'
                         'Будем рады видеть вас в нашей <a href="https://vk.com/skyboxcomic">группе ВКонтакте</a>, где мы публикуем различные дополнительные материалы по комиксу!'
                         '</p>',
-        "name": "Акт {} - {}".format(act_num, str(post_num-delta).zfill(2)),
+        "name": name,
         "number": "",
         "numberOrder": "on",
         "originalUrl": "http://www.skyboxcomic.com/comics/{}".format(post_num),
@@ -55,8 +59,15 @@ def post_ak(post_num, delta, act_num, frames_path=frames_dir):
             time.sleep(2)
 
 
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1", "y")
+
+
 if __name__ == "__main__":
     p_num = int(input("Post/folder num: "))
+    im = str2bool(input("Is that IM break? "))
+    if im:
+        im = int(input("Im num: "))
     a_num = int(input("Arc num: "))
 
-    post_ak(p_num, post_num_delta, a_num, frames_dir)
+    post_ak(p_num, post_num_delta, a_num, frames_dir, im)

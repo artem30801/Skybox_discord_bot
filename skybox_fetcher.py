@@ -6,6 +6,7 @@ import os
 import re
 import pickle
 import asyncio
+import statistics
 
 from functools import partial
 import aiofiles
@@ -13,6 +14,7 @@ import collections
 
 url = 'http://skyboxcomic.com/'
 url_comics = 'comics/'
+user_votes_file = 'votes.txt'
 
 
 def process_page(im, i):
@@ -29,8 +31,12 @@ def process_gif(region):
     return region.convert(mode='P', palette=Image.ADAPTIVE)
 
 
-def save_gif(frames, path):
-    frames[0].save(path, append_images=frames[1:], save_all=True, duration=350, loop=0)
+def save_gif(frames, path, timing=None):
+    if timing is None:
+        timing = [250]
+    if len(timing) == 1:
+        timing = timing[0]
+    frames[0].save(path, append_images=frames[1:], save_all=True, duration=timing, loop=0)
 
 
 def get_last_page():
@@ -120,7 +126,19 @@ async def pull_comic(pages_dir='pages/', frames_dir='frames/', gif_dir='gif/', d
     return added_frames, added_gifs
 
 
-async def split_page(image_name, global_numeration=0, pages_dir='pages/', frames_dir='frames/', gif_dir='gif/'):
+def get_timing(num):
+    if os.path.exists(os.path.abspath(user_votes_file)):
+        with open(os.path.abspath(user_votes_file), 'rb') as f:
+            votes = pickle.load(f)
+    else:
+        return 250
+
+    timings = votes[num]
+    return round(statistics.mean(timings.values() if timings else [250]))
+
+
+async def split_page(image_name, global_numeration=0, pages_dir='pages/', frames_dir='frames/', gif_dir='gif/',
+                     load_timings=False):
 
     if not os.path.exists(os.path.abspath(frames_dir)):
         os.mkdir(os.path.abspath(frames_dir))
@@ -140,6 +158,7 @@ async def split_page(image_name, global_numeration=0, pages_dir='pages/', frames
     count = im.size[1] // 338
 
     frames = []
+    timings = []
 
     print('Splitting page:', image_name, 'Frames done:', global_numeration, "to: ", frames_dir)
     gif_path = os.path.abspath(gif_dir + image_name.split(".")[0] + '.gif')
@@ -157,11 +176,18 @@ async def split_page(image_name, global_numeration=0, pages_dir='pages/', frames
             if not os.path.exists(gif_path):
                 region = await loop.run_in_executor(None, partial(process_gif, region))
                 frames.append(region)  # for gifs
+                if load_timings:
+                    timings.append(get_timing(global_numeration))
+
         global_numeration += 1
         await asyncio.sleep(0)
 
     if not os.path.exists(gif_path):
-        await loop.run_in_executor(None, partial(save_gif, frames, gif_path))
+        if load_timings:
+            await loop.run_in_executor(None, partial(save_gif, frames, gif_path, timings))
+        else:
+            await loop.run_in_executor(None, partial(save_gif, frames, gif_path))
+
         added_gifs += 1
 
     return global_numeration, added_frames, added_gifs
