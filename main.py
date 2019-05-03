@@ -318,6 +318,9 @@ async def _page(ctx, arg1="", arg2=""):
 async def frame(ctx, arg1="", arg2=""):
     await _frame(ctx, arg1, arg2)
 
+    if arg1.isdigit() and arg1.isdigit():
+        await _vote(ctx, int(arg2))
+
 
 async def _frame(ctx, arg1="", arg2=""):
     arcs, dt = _get_database()
@@ -374,7 +377,7 @@ async def gif(ctx, arg1="", arg2=""):
     await _gif(ctx, arg1, arg2)
 
 
-async def _gif(ctx, arg1="", arg2=""):
+async def _gif(ctx, arg1="", arg2="", change_current=True):
     arcs, dt = _get_database()
     _current = get_page_from_frame(dt, current[ctx.message.channel.id][1]) + 2
 
@@ -411,7 +414,8 @@ async def _gif(ctx, arg1="", arg2=""):
         else:
             if _current > 2:
                 item = list(dt.items())[_current - 2]
-                current[ctx.message.channel.id] = ("gif", item[1][0] - item[1][1])
+                if change_current:
+                    current[ctx.message.channel.id] = ("gif", item[1][0] - item[1][1])
 
                 await ctx.send("Here you go, gif №{} of Arc {} - {}: Page {} ({} frames)".format(
                     _current,
@@ -442,6 +446,10 @@ def add_to_voted(index, value, user):
 
 @bot.command(aliases=["v"])
 async def vote(ctx, timing: int):
+    await _vote(ctx, timing)
+
+
+async def _vote(ctx, timing):
     if current[ctx.message.channel.id][0] == "frame":
         if timing in range(50, 5000+1):
             _current = current[ctx.message.channel.id][1]
@@ -486,7 +494,7 @@ async def regen_gif(ctx, arg1=""):
     await skybox_fetcher.split_page('{}.jpg'.format(_current), frame_num, pages_dir, frames_dir, gif_dir, True)
     print("Gif {} regenerated".format(_current))
     await ctx.send("Gif {} successfully regenerated!".format(_current))
-    await _gif(ctx, str(_current))
+    await _gif(ctx, str(_current), change_current=False)
 
 
 @bot.command()
