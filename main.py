@@ -444,7 +444,7 @@ def add_to_voted(index, value, user):
     return votes[index]
 
 
-@bot.command(aliases=["v"])
+@bot.command(aliases=["v", "delay"])
 async def vote(ctx, timing: int):
     await _vote(ctx, timing)
 
