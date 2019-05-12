@@ -32,9 +32,9 @@ def post_ak(post_num, delta, act_num, frames_path=frames_dir, is_im=False):
         name = "Акт {} - Чат-вставка {}".format(act_num, str(is_im).zfill(2))
     data = {
         "altText": "",
-        "description": '<hr />'
+        "description":  '<hr />'
                         '<p>'
-                        'Будем рады видеть вас в нашей <a href="https://vk.com/skyboxcomic">группе ВКонтакте</a>, где мы публикуем различные дополнительные материалы по комиксу!'
+                        '<span style="font-size:13px;">Будем рады видеть вас в нашей </span><a href="https://vk.com/skyboxcomic"><span style="font-size:15px;">группе ВКонтакте</span></a>, <span style="font-size:13px;">где мы публикуем различные дополнительные материалы по комиксу!</span>'
                         '</p>',
         "name": name,
         "number": "",

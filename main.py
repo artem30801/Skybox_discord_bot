@@ -20,7 +20,7 @@ database_file = 'database.txt'
 
 user_votes_file = 'votes.txt'
 
-#https://discordapp.com/api/oauth2/authorize?client_id=569075344938893322&permissions=261184&scope=bot
+#https://discordapp.com/api/oauth2/authorize?client_id=569075344938893322&permissions=268958784&scope=bot
 with open(os.path.abspath("token.txt"), "r") as f:  # 261184
     TOKEN = f.read()
 
@@ -513,11 +513,29 @@ async def spacetalk(ctx, *, message: str):
 async def database(ctx):
     async with ctx.typing():
         try:
-            file = discord.File(os.path.abspath(database_file), filename=database_file)
+            file1 = discord.File(os.path.abspath(database_file), filename=database_file)
+            file2 = discord.File(os.path.abspath(user_votes_file), filename=user_votes_file)
+
         except FileNotFoundError:
             await ctx.send("Sorry, but i can't find mah database!")
         else:
-            await ctx.send("Here you go, my full database!", file=file)
+            await ctx.send("Here you go, my full database!", file=file1)
+            await ctx.send("Here you go, my full votes database!", file=file2)
+
+
+@bot.command(aliases=["stream", "crew", "stream_crew"])
+async def streamcrew(ctx, arg=""):
+    role = discord.utils.get(ctx.guild.roles, name="livestream crew")
+    if role is None:
+        await ctx.send("Sorry, but no such role here available!")
+        return
+    user = ctx.message.author
+    if arg in ("no", "off", "exit", "leave", "-"):
+        await user.remove_roles(role)
+        await ctx.send("Goodbye!")
+    else:
+        await user.add_roles(role)
+        await ctx.send("Welcome to stream crew!")
 
 
 bot.run(TOKEN.strip())
