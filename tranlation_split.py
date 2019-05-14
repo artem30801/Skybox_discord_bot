@@ -16,7 +16,7 @@ if not os.path.exists(os.path.abspath(gif_dir)):
 async def split_all():
     for image in os.listdir(os.path.abspath(pages_dir)):
         result = await skybox_fetcher.split_page(image, 0,
-                                                 pages_dir, frames_dir+image.split(".")[0]+'/', gif_dir)
+                                                 pages_dir, frames_dir+image.split(".")[0]+'/', gif_dir, True)
         print(result)
 
 
