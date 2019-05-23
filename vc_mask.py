@@ -1,4 +1,4 @@
-from english_words.read_english_dictionary import load_words
+from english.read_english_dictionary import load_words
 import re
 
 
