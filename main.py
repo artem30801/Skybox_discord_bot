@@ -12,6 +12,7 @@ from discord.ext.commands import BucketType
 from discord.utils import get
 
 import skybox_fetcher
+import vc_mask
 
 pages_dir = 'pages/'
 frames_dir = 'frames/'
@@ -497,7 +498,7 @@ async def regen_gif(ctx, arg1=""):
     await _gif(ctx, str(_current), change_current=False)
 
 
-@bot.command()
+@bot.command(aliases=["st",])
 async def spacetalk(ctx, *, message: str):
     message = message.lower()
     out_msg = re.sub('[aeiou]', '-', message)
@@ -507,6 +508,14 @@ async def spacetalk(ctx, *, message: str):
     out_msg = re.sub('[кнгшщзхфвпрлдчсмтжбцьъ]', '/', out_msg)
 
     await ctx.send("`{}`".format(out_msg))  # Some spaceside once told me:
+
+
+@bot.command(aliases=["translate", "unspasetalk", "ust"])
+async def decipher(ctx, word: str, max_words: int = 100):
+    result = list(vc_mask.mask_match(word))
+    res_len = len(result)
+    s = " | ".join(result[:max_words])
+    await ctx.send("Found {} word matches (showing first {}): \n {}".format(res_len, min(res_len, max_words), s))
 
 
 @bot.command(hidden=True)
