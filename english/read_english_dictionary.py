@@ -2,11 +2,11 @@ import os
 
 
 def load_words():
-    with open(os.path.abspath('english/google-10000-english.txt')) as word_file:
-        valid_words = set(word_file.read().split())
-
     with open(os.path.abspath('english/skybox_dictionary.txt')) as word_file:
-        valid_words.update(word_file.read().split())
+        valid_words = list(word_file.read().split())
+
+    with open(os.path.abspath('english/topwiki.txt')) as word_file: #google-10000-english.txt
+        valid_words.extend(word_file.read().split())
 
     return valid_words
 

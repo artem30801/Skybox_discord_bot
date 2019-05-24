@@ -10,6 +10,7 @@ import statistics
 from discord.ext import commands
 from discord.ext.commands import BucketType
 from discord.utils import get
+import typing
 
 import skybox_fetcher
 import vc_mask
@@ -498,7 +499,7 @@ async def regen_gif(ctx, arg1=""):
     await _gif(ctx, str(_current), change_current=False)
 
 
-@bot.command(aliases=["st",])
+@bot.command(aliases=["st", ])
 async def spacetalk(ctx, *, message: str):
     message = message.lower()
     out_msg = re.sub('[aeiou]', '-', message)
@@ -510,12 +511,21 @@ async def spacetalk(ctx, *, message: str):
     await ctx.send("`{}`".format(out_msg))  # Some spaceside once told me:
 
 
-@bot.command(aliases=["translate", "unspasetalk", "ust"])
-async def decipher(ctx, word: str, max_words: int = 100):
+@bot.command(aliases=["translate_word", "unspasetalk_word", "ustw"])
+async def decipher_word(ctx, word: str, max_words: int = 100):
     result = list(vc_mask.mask_match(word))
     res_len = len(result)
     s = " | ".join(result[:max_words])
     await ctx.send("Found {} word matches (showing first {}): \n {}".format(res_len, min(res_len, max_words), s))
+
+
+@bot.command(aliases=["translate", "unspasetalk", "ust"])
+async def decipher(ctx, mutate_num: typing.Optional[int] = 20, words_num: typing.Optional[int] = 5, *words):
+    result = list(vc_mask.sentence_match(*words, wordnum=words_num))
+    res_len = len(result)
+    s = "\n".join([" ".join(x) for x in result[:mutate_num]])
+    await ctx.send("Possible {} translation variants (of {} possible permutations) are: \n".format(
+        min(res_len, mutate_num), res_len)+s)
 
 
 @bot.command(hidden=True)
