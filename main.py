@@ -93,6 +93,8 @@ async def on_command_error(ctx, error):
         await ctx.send("Sorry, but your arguments are invalid!")
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Sorry, but you missed required argument!")
+    elif isinstance(error, commands.NoPrivateMessage):
+        await ctx.send("You can use that only in guild!")
     else:
         print(error)
         traceback.print_exc()
@@ -543,6 +545,7 @@ async def database(ctx):
 
 
 @bot.command(aliases=["stream", "crew", "stream_crew"])
+@discord.ext.commands.guild_only()
 async def streamcrew(ctx, arg=""):
     role = discord.utils.get(ctx.guild.roles, name="livestream crew")
     if role is None:
@@ -555,6 +558,77 @@ async def streamcrew(ctx, arg=""):
     else:
         await user.add_roles(role)
         await ctx.send("Welcome to stream crew!")
+
+
+skybox_roles = {
+    #"livestream crew": discord.Colour(0xA652BB),
+    "Shanti": discord.Colour(0x0000FF),
+    "Rachel": discord.Colour(0xFF0000),
+    "Pegaside": discord.Colour(0x9f72f3),
+    "Gryphside": discord.Colour(0x72a3f2),
+    "Zalside": discord.Colour(0x70f290),
+    "Nixside": discord.Colour(0xeb1f20),
+    "Drakeside": discord.Colour(0xf3ef72),
+    "Spaceside": discord.Colour(0x010101),
+
+}
+
+
+@bot.command(aliases=["chose_side", "pick_side", "side_pick", "sider"])
+@discord.ext.commands.guild_only()
+async def side(ctx, arg: str):
+    if arg in ("setup", "refresh", "reload"):
+        for role_name, col in skybox_roles.items():
+            role = discord.utils.get(ctx.guild.roles, name=role_name)
+            if role is not None:
+                await role.edit(colour=col)
+            else:
+                await ctx.guild.create_role(name=role_name, colour=col)
+        await ctx.send("(re)created skybox roles!")
+        return
+
+    user = ctx.message.author
+
+    if arg in ("none", "noside", "no", "off", "exit", "leave", "-"):
+        for role_name in skybox_roles.keys():
+            role = discord.utils.get(ctx.guild.roles, name=role_name)
+            await user.remove_roles(role)
+        await ctx.send("You're now a *noside*! Is that what you wanted?")
+        return
+
+    if arg.title() in skybox_roles.keys():
+        s = arg.title()
+    elif "sider"in arg.lower():
+        s = arg.title()[:-1]
+    elif "side" in arg.lower():
+        s = arg.title()
+    else:
+        s = arg.title()+"side"
+
+    if s in skybox_roles.keys():
+        for role_name in skybox_roles.keys():
+            role = discord.utils.get(ctx.guild.roles, name=role_name)
+            if role is not None and role in user.roles:
+                await user.remove_roles(role)
+
+        role = discord.utils.get(ctx.guild.roles, name=s)
+        if role is not None:
+            await user.add_roles(role)
+            await ctx.send("You're now a {}!".format(s))
+        else:
+            await ctx.send("There is no such side role! Try to '!side setup'")
+    else:
+        await ctx.send("Sorry, but there is no such side!")
+
+
+@bot.command(hidden=True)
+@discord.ext.commands.guild_only()
+async def side_delete(ctx):
+    for role_name in skybox_roles.keys():
+        role = discord.utils.get(ctx.guild.roles, name=role_name)
+        if role is not None:
+            await role.delete()
+    await ctx.send("Deleted all 'side' roles.")
 
 
 bot.run(TOKEN.strip())
