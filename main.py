@@ -596,6 +596,13 @@ async def side(ctx, arg: str):
         await ctx.send("You're now a *noside*! Is that what you wanted?")
         return
 
+    if arg in ("all", "list", "view", "help", "halp"):
+        sides = ""
+        for key in skybox_roles.keys():
+            sides += "\n {}".format(key)
+        await ctx.send("Current available siders roles: {}".format(sides))
+        return
+
     if arg.title() in skybox_roles.keys():
         s = arg.title()
     elif "sider"in arg.lower():
