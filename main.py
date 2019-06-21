@@ -570,6 +570,7 @@ skybox_roles = {
     "Nixside": discord.Colour(0xeb1f20),
     "Drakeside": discord.Colour(0xf3ef72),
     "Spaceside": discord.Colour(0x010101),
+    "Ziva": discord.Colour(0xFF0000)
 
 }
 
@@ -613,17 +614,22 @@ async def side(ctx, arg: str):
         s = arg.title()+"side"
 
     if s in skybox_roles.keys():
+        prev_role = ""
         for role_name in skybox_roles.keys():
             role = discord.utils.get(ctx.guild.roles, name=role_name)
             if role is not None and role in user.roles:
                 await user.remove_roles(role)
+                prev_role = role.name
+                break
 
         role = discord.utils.get(ctx.guild.roles, name=s)
         if role is not None:
+            if prev_role == "Ziva" and s == "Drakeside":
+                await ctx.send("You know, Ziva, you can't really learn drakeside boxsignal this way!")
             await user.add_roles(role)
             await ctx.send("You're now a {}!".format(s))
         else:
-            await ctx.send("There is no such side role! Try to '!side setup'")
+            await ctx.send("There is no such side role on the server! Try to '!side setup'")
     else:
         await ctx.send("Sorry, but there is no such side!")
 
