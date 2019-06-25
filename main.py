@@ -582,7 +582,7 @@ async def side(ctx, arg: str):
         for role_name, col in skybox_roles.items():
             role = discord.utils.get(ctx.guild.roles, name=role_name)
             if role is not None:
-                await role.edit(colour=col)
+                await role.edit(colour=col, mentionable=True)
             else:
                 await ctx.guild.create_role(name=role_name, colour=col)
         await ctx.send("(re)created skybox roles!")
