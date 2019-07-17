@@ -4,7 +4,7 @@ import time
 import requests
 
 frames_dir = 'translated_frames/'
-post_num_delta = 5
+post_num_delta = 82
 
 cookies = {
     'unpin': 'false',

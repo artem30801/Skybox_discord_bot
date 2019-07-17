@@ -12,7 +12,7 @@ from functools import partial
 import aiofiles
 import collections
 
-url = 'http://skyboxcomic.com/'
+url = 'http://skybox.thecomicseries.com/'
 url_comics = 'comics/'
 user_votes_file = 'votes.txt'
 
@@ -33,7 +33,7 @@ def process_gif(region):
 
 def save_gif(frames, path, timing=None):
     if timing is None:
-        timing = [650]
+        timing = [700]
     if len(timing) == 1:
         timing = timing[0]
     frames[0].save(path, append_images=frames[1:], save_all=True, duration=timing, loop=0)
