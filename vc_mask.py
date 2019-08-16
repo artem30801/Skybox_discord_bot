@@ -19,12 +19,13 @@ def improve_spacetalk(word):
 
 
 def mask_match(word):
-    word = improve_spacetalk(word)
     size = len(word)
-    len_words = filter(lambda x: len(x) == size, words)
+    print(word, size)
+    word = improve_spacetalk(word)
     if re.match('[^\/\-—]', word):
         out_words = [word]
     else:
+        len_words = filter(lambda x: len(x) == size, words)
         out_words = filter(lambda x: convert_spacetalk(x) == word, len_words)
     return out_words
 
