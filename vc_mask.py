@@ -18,9 +18,14 @@ def improve_spacetalk(word):
     return output
 
 
+def clarify_spacetalk(word):
+    output = re.sub('—', '--', word)
+    return output
+
+
 def mask_match(word):
+    word = clarify_spacetalk(word)
     size = len(word)
-    print(word, size)
     word = improve_spacetalk(word)
     if re.match('[^\/\-—]', word):
         out_words = [word]
