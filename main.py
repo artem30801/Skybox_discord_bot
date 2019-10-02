@@ -614,7 +614,7 @@ async def side(ctx, arg: str):
     else:
         s = arg.title()+"side"
 
-    if arg == "Simurgh" or arg == "The":
+    if arg.title() == "Simurgh" or arg.title() == "The":
         s = "The Simurgh"
 
     if s in skybox_roles.keys():
