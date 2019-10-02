@@ -518,6 +518,7 @@ async def decipher_word(ctx, word: str, max_words: int = 100):
     result = list(vc_mask.mask_match(word))
     res_len = len(result)
     s = " | ".join(result[:max_words])
+    s = " / ".join(result[:max_words])
     await ctx.send("Found {} word matches (showing first {}): \n {}".format(res_len, min(res_len, max_words), s))
 
 
@@ -570,8 +571,8 @@ skybox_roles = {
     "Nixside": discord.Colour(0xeb1f20),
     "Drakeside": discord.Colour(0xf3ef72),
     "Spaceside": discord.Colour(0x010101),
-    "Ziva": discord.Colour(0xFF0000)
-
+    "Ziva": discord.Colour(0xFF0000),
+    "The Simurgh": discord.Colour(0x73E2CD),
 }
 
 
@@ -606,7 +607,7 @@ async def side(ctx, arg: str):
 
     if arg.title() in skybox_roles.keys():
         s = arg.title()
-    elif "sider"in arg.lower():
+    elif "sider" in arg.lower():
         s = arg.title()[:-1]
     elif "side" in arg.lower():
         s = arg.title()
@@ -626,6 +627,11 @@ async def side(ctx, arg: str):
         if role is not None:
             if prev_role == "Ziva" and s == "Drakeside":
                 await ctx.send("You know, Ziva, you can't really learn drakeside boxsignal this way!")
+
+            if s == "The Simurgh":
+                await ctx.send("THE SIMURGH")
+                await ctx.send("IS HERE")
+
             await user.add_roles(role)
             await ctx.send("You're now a {}!".format(s))
         else:
