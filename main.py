@@ -1,5 +1,6 @@
 import os
 import re
+import math
 import random
 import pickle
 import collections
@@ -81,6 +82,14 @@ async def on_message(message):
                 now_downloading = False
             else:
                 await message.add_reaction(emoji="⌛")
+
+    if "telling" in message.content.lower():
+        try:
+            file = discord.File(os.path.abspath('telling.gif'), filename='thatwouldbetelling.gif')
+        except FileNotFoundError:
+            await message.channel.send("No, no, that would be telling")
+        else:
+            await message.channel.send(" ", file=file)
 
     await bot.process_commands(message)
 
@@ -294,12 +303,22 @@ async def _page(ctx, arg1="", arg2=""):
                         _current -= 1
                 else:
                     _current = int(arg1)
+                    item = list(dt.items())[_current - 2]
+                    print(item)
+                    if arg2:
+                        arg2 = int(arg2)
+                        #arg2 = arg2 if arg2 != 0 else 1
+                        arg2 = arg2-1 if arg2 > 0 else arg2
+                        fr = item[1][0]-item[1][1] + arg2
+                        await _frame(ctx, str(fr))
+
+                        return
+
             except ValueError:
                 await ctx.send("Hey, that should be a *number*! Integer, ya know")
                 return
     img = '{}.jpg'.format(_current)
 
-    item = list(dt.items())[_current-2]
 
     async with ctx.typing():
         try:
