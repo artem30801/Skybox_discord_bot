@@ -288,6 +288,7 @@ async def _page(ctx, arg1="", arg2=""):
             paths = os.listdir(os.path.abspath(pages_dir))
             img = random.choice(paths)
             _current = int(img.split('.')[0])
+            item = list(dt.items())[_current - 2]
 
         else:
             try:
@@ -296,15 +297,18 @@ async def _page(ctx, arg1="", arg2=""):
                         _current += int(arg2)
                     else:
                         _current += 1
+                    item = list(dt.items())[_current - 2]
+
                 elif arg1 in ("previous", "back", "prev", "-"):
                     if arg2:
                         _current -= int(arg2)
                     else:
                         _current -= 1
+                    item = list(dt.items())[_current - 2]
+
                 else:
                     _current = int(arg1)
                     item = list(dt.items())[_current - 2]
-                    print(item)
                     if arg2:
                         arg2 = int(arg2)
                         #arg2 = arg2 if arg2 != 0 else 1
@@ -318,7 +322,6 @@ async def _page(ctx, arg1="", arg2=""):
                 await ctx.send("Hey, that should be a *number*! Integer, ya know")
                 return
     img = '{}.jpg'.format(_current)
-
 
     async with ctx.typing():
         try:
