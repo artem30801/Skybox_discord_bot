@@ -595,6 +595,12 @@ skybox_roles = {
     "Spaceside": discord.Colour(0x010101),
     "Ziva": discord.Colour(0xFF0000),
     "The Simurgh": discord.Colour(0x73E2CD),
+    "Ralsei": discord.Colour(0x73E2CD),
+    "Eslira": discord.Colour(0x93d3ec),
+    "Aelsir": discord.Colour(0xe59556),
+    "Irales": discord.Colour(0xab74c8),
+    "Larise": discord.Colour(0xd9d278),
+    "Sareli": discord.Colour(0x686fbf),
 }
 
 
