@@ -5,6 +5,7 @@ import random
 import pickle
 import collections
 import traceback
+from datetime import datetime
 
 import discord
 import statistics
@@ -15,6 +16,7 @@ import typing
 
 import skybox_fetcher
 import vc_mask
+import utils
 
 pages_dir = 'pages/'
 frames_dir = 'frames/'
@@ -468,6 +470,35 @@ def add_to_voted(index, value, user):
 
     print(votes)
     return votes[index]
+
+
+@bot.command()
+async def convert(ctx: commands.context.Context, time, timezone_from, timezone_to):
+    # using current day to take day saving time into accout
+    try:
+        time = utils.get_datetime_from_strtime(time)
+    except ValueError as error:
+        await ctx.send(f"Can't parse '{time}' time")
+        return
+    
+    time = datetime.utcnow().replace(hour=time.hour, minute=time.minute)
+
+    try:
+        timezone_from = utils.get_timezone_from_abbr(timezone_from)
+    except KeyError as error:
+        await ctx.send(f"Can't find timezone {error}")
+        return
+
+    try:
+        timezone_to = utils.get_timezone_from_abbr(timezone_to)
+    except KeyError as error:
+        await ctx.send(f"Can't find timezone {error}")
+        return
+
+    time_utc = time - timezone_from.utcoffset(None)
+    result_time = time_utc + timezone_to.utcoffset(None)
+    
+    await ctx.send(f'{result_time.hour}:{result_time.minute} ({timezone_from} -> {timezone_to})')
 
 
 @bot.command(aliases=["v", "delay"])

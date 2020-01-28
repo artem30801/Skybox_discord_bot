@@ -197,6 +197,30 @@ TIMEZONES = {
 }
 # pylint: enable=line-too-long
 
+def get_timezone_from_abbr(timezone_abbreviation: str) -> timezone:
+    '''parse input string (format is TIMEZONE+/-HOURS[:MINUTES]) and returns according timezone'''
+    if '+' in timezone_abbreviation:
+        [zone, offset] = timezone_abbreviation.split('+')
+        zone = TIMEZONES[zone]
+        offset = get_datetime_from_strtime(offset)
+        zone = timezone(zone.utcoffset(None) + timedelta(hours=offset.hour, minutes=offset.minute))
+        return zone
+
+    if '-' in timezone_abbreviation:
+        [zone, offset] = timezone_abbreviation.split('-')
+        zone = TIMEZONES[zone]
+        offset = get_datetime_from_strtime(offset)
+        zone = timezone(zone.utcoffset(None) - timedelta(hours=offset.hour, minutes=offset.minute))
+        return zone
+
+    if '−' in timezone_abbreviation:
+        [zone, offset] = timezone_abbreviation.split('−')
+        zone = TIMEZONES[zone]
+        offset = get_datetime_from_strtime(offset)
+        zone = timezone(zone.utcoffset(None) - timedelta(hours=offset.hour, minutes=offset.minute))
+        return zone
+    return TIMEZONES[timezone_abbreviation]
+
 TimezoneSetup = namedtuple('TimezoneSetup', ['Abbreviation', 'Offset', 'Name'])
 
 def get_datetime_from_strtime(time: str) -> datetime:
