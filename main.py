@@ -473,8 +473,12 @@ def add_to_voted(index, value, user):
 
 
 @bot.command()
-async def convert(ctx: commands.context.Context, time, timezone_from, timezone_to):
+async def convert(ctx: commands.context.Context, *args):
     # using current day to take day saving time into accout
+    timezone_to = args[-1]
+    timezone_from = args[-2]
+    time = ' '.join(args[0:-2])
+
     try:
         time = utils.get_datetime_from_strtime(time)
     except ValueError as error:
@@ -498,7 +502,7 @@ async def convert(ctx: commands.context.Context, time, timezone_from, timezone_t
     time_utc = time - timezone_from.utcoffset(None)
     result_time = time_utc + timezone_to.utcoffset(None)
     
-    await ctx.send(f'{result_time.hour}:{result_time.minute} ({timezone_from} -> {timezone_to})')
+    await ctx.send(f'{result_time.hour}:{result_time.minute} (from {timezone_from} to {timezone_to})')
 
 
 @bot.command(aliases=["v", "delay"])

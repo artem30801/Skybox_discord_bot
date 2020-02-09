@@ -1,5 +1,6 @@
 '''File with different functions for bot, that somewhy not in the main body'''
 
+import re
 from datetime import datetime, timezone, timedelta
 from collections import namedtuple
 
@@ -199,6 +200,7 @@ TIMEZONES = {
 
 def get_timezone_from_abbr(timezone_abbreviation: str) -> timezone:
     '''parse input string (format is TIMEZONE+/-HOURS[:MINUTES]) and returns according timezone'''
+    timezone_abbreviation = timezone_abbreviation.upper()
     if '+' in timezone_abbreviation:
         [zone, offset] = timezone_abbreviation.split('+')
         zone = TIMEZONES[zone]
@@ -225,9 +227,29 @@ TimezoneSetup = namedtuple('TimezoneSetup', ['Abbreviation', 'Offset', 'Name'])
 
 def get_datetime_from_strtime(time: str) -> datetime:
     '''parse input string and returns datetime with hours and minutes from string'''
+    time = time.upper()
     time_format = '%H'
-    if ':' in time:
-        time_format = '%H:%M'
+
+    hours_end = re.search(r'\D', time)
+    if hours_end:
+        hours_end = hours_end.start()
+        minutes_start = re.search(r'\d', time[hours_end:])
+        if minutes_start:
+            minutes_start = hours_end + minutes_start.start()
+            time_format += time[hours_end:minutes_start]
+            time_format += '%M'
+            minutes_end = re.search(r'\D', time[minutes_start:])
+            if minutes_end:
+                leftover = time[minutes_start + minutes_end.start():]
+                if leftover.endswith('AM') or leftover.endswith('PM'):
+                    time_format += leftover[:-2]
+                    time_format += '%p'
+                    time_format = time_format.replace('%H', '%I')
+                else:
+                    time_format += leftover
+        else:
+            time_format += time[hours_end:]
+
     return datetime.strptime(time, time_format)
 
 
