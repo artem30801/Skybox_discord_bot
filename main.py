@@ -472,9 +472,13 @@ def add_to_voted(index, value, user):
     return votes[index]
 
 
-@bot.command()
+@bot.command(help="Converts time between timezones. Use '!help convert' for details",
+             description = "Use as '!convert time timezone_from timezone_to' "
+             "(for example '!convert 9:15 AM CST GMT')\n"
+             "Time supports both 12h and 24h formats\n"
+             "Use abbreviation to specify timezones. "
+             "Timezones support time shift (e.g. GMT+3)")
 async def convert(ctx: commands.context.Context, *args):
-    # using current day to take day saving time into accout
     timezone_to = args[-1]
     timezone_from = args[-2]
     time = ' '.join(args[0:-2])
@@ -485,6 +489,7 @@ async def convert(ctx: commands.context.Context, *args):
         await ctx.send(f"Can't parse '{time}' time")
         return
     
+    # using current day to take day saving time into account
     time = datetime.utcnow().replace(hour=time.hour, minute=time.minute)
 
     try:
@@ -502,7 +507,7 @@ async def convert(ctx: commands.context.Context, *args):
     time_utc = time - timezone_from.utcoffset(None)
     result_time = time_utc + timezone_to.utcoffset(None)
     
-    await ctx.send(f'{result_time.hour}:{result_time.minute} (from {timezone_from} to {timezone_to})')
+    await ctx.send(f'{result_time:%H:%M} (from {timezone_from} to {timezone_to})')
 
 
 @bot.command(aliases=["v", "delay"])

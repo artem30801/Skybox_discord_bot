@@ -6,6 +6,7 @@ from collections import namedtuple
 
 # using pytz requires additional work, it's easier to handle it manually
 # https://en.wikipedia.org/wiki/List_of_time_zone_abbreviations
+# use read_timezones_file() to convert copy-pasted list from wiki to this map
 # pylint: disable=line-too-long
 TIMEZONES = {
     "ACDT" : timezone(timedelta(hours=10, minutes=30)), # Australian Central Daylight Savings Time
