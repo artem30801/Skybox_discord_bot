@@ -85,7 +85,7 @@ async def on_message(message):
             else:
                 await message.add_reaction(emoji="⌛")
 
-    if "telling" in message.content.lower():
+    if utils.contains_word(message.content, 'telling'):
         try:
             file = discord.File(os.path.abspath('telling.gif'), filename='thatwouldbetelling.gif')
         except FileNotFoundError:
