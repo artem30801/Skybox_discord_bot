@@ -224,8 +224,6 @@ def get_timezone_from_abbr(timezone_abbreviation: str) -> timezone:
         return zone
     return TIMEZONES[timezone_abbreviation]
 
-TimezoneSetup = namedtuple('TimezoneSetup', ['Abbreviation', 'Offset', 'Name'])
-
 def get_datetime_from_strtime(time: str) -> datetime:
     '''parse input string and returns datetime with hours and minutes from string'''
     leftover = time.upper()
@@ -249,7 +247,7 @@ def get_datetime_from_strtime(time: str) -> datetime:
                 leftover = leftover[minutes_end.start():]
             else:
                 leftover = None
-    
+
     # try scan for AM/PM
     if leftover:
         period = re.search(r'AM|PM', leftover)
@@ -261,7 +259,7 @@ def get_datetime_from_strtime(time: str) -> datetime:
                 time_format += '%p'
                 time_format = time_format.replace('%H', '%I')
                 leftover = leftover[period.end():]
-            
+
 
     # add leftover to the format
     if leftover:
@@ -269,6 +267,14 @@ def get_datetime_from_strtime(time: str) -> datetime:
 
     return datetime.strptime(time.upper(), time_format)
 
+def contains_word(message: str, word: str) -> bool:
+    '''returns, if there is a word in the message'''
+    # \A - start of the string, \Z - end of the string, \W - not a word character
+    check_result = re.search(f"(\\A|\\W){word}(\\Z|\\W)", message, re.IGNORECASE)
+    return check_result is not None
+
+
+TimezoneSetup = namedtuple('TimezoneSetup', ['Abbreviation', 'Offset', 'Name'])
 
 def read_timezones_file(file_name, file_encoding='utf-8') -> [TimezoneSetup]:
     '''reads file with list of timezones and converts to the array for TIMEZONES dict'''
