@@ -224,35 +224,57 @@ def get_timezone_from_abbr(timezone_abbreviation: str) -> timezone:
         return zone
     return TIMEZONES[timezone_abbreviation]
 
-TimezoneSetup = namedtuple('TimezoneSetup', ['Abbreviation', 'Offset', 'Name'])
-
 def get_datetime_from_strtime(time: str) -> datetime:
     '''parse input string and returns datetime with hours and minutes from string'''
-    time = time.upper()
+    leftover = time.upper()
     time_format = '%H'
 
-    hours_end = re.search(r'\D', time)
+    hours_end = re.search(r'\D', leftover)
     if hours_end:
-        hours_end = hours_end.start()
-        minutes_start = re.search(r'\d', time[hours_end:])
+        leftover = leftover[hours_end.start():]
+    else:
+        leftover = None
+
+    # try scan for minutes
+    if leftover:
+        minutes_start = re.search(r'\d', leftover)
         if minutes_start:
-            minutes_start = hours_end + minutes_start.start()
-            time_format += time[hours_end:minutes_start]
+            time_format += leftover[:minutes_start.start()]
             time_format += '%M'
-            minutes_end = re.search(r'\D', time[minutes_start:])
+            leftover = leftover[minutes_start.start():]
+            minutes_end = re.search(r'\D', leftover)
             if minutes_end:
-                leftover = time[minutes_start + minutes_end.start():]
-                if leftover.endswith('AM') or leftover.endswith('PM'):
-                    time_format += leftover[:-2]
-                    time_format += '%p'
-                    time_format = time_format.replace('%H', '%I')
-                else:
-                    time_format += leftover
-        else:
-            time_format += time[hours_end:]
+                leftover = leftover[minutes_end.start():]
+            else:
+                leftover = None
 
-    return datetime.strptime(time, time_format)
+    # try scan for AM/PM
+    if leftover:
+        period = re.search(r'AM|PM', leftover)
+        if period:
+            start_valid = period.start() == 0 or leftover[period.start() - 1].isspace()
+            end_valid = period.end() == len(leftover) or leftover[period.end()].isspace()
+            if start_valid and end_valid:
+                time_format += leftover[:period.start()]
+                time_format += '%p'
+                time_format = time_format.replace('%H', '%I')
+                leftover = leftover[period.end():]
 
+
+    # add leftover to the format
+    if leftover:
+        time_format += leftover
+
+    return datetime.strptime(time.upper(), time_format)
+
+def contains_word(message: str, word: str) -> bool:
+    '''returns, if there is a word in the message'''
+    # \A - start of the string, \Z - end of the string, \W - not a word character
+    check_result = re.search(f"(\\A|\\W){word}(\\Z|\\W)", message, re.IGNORECASE)
+    return check_result is not None
+
+
+TimezoneSetup = namedtuple('TimezoneSetup', ['Abbreviation', 'Offset', 'Name'])
 
 def read_timezones_file(file_name, file_encoding='utf-8') -> [TimezoneSetup]:
     '''reads file with list of timezones and converts to the array for TIMEZONES dict'''
