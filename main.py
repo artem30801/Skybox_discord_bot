@@ -729,6 +729,7 @@ async def side_delete(ctx):
 @bot.command(hidden=True)
 @discord.ext.commands.guild_only()
 async def migrate(ctx):
+    print(ctx.guild.roles)
     role = discord.utils.get(ctx.guild.roles, name="The Simurgh")
     await role.edit(name="Simurgh")
 
