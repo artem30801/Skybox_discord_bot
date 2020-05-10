@@ -634,13 +634,14 @@ skybox_roles = {
     "Drakeside": discord.Colour(0xf3ef72),
     "Spaceside": discord.Colour(0x010101),
     "Ziva": discord.Colour(0xFF0000),
-    "The Simurgh": discord.Colour(0x73E2CD),
+    "Simurgh": discord.Colour(0x73E2CD),
     "Ralsei": discord.Colour(0x73E2CD),
     "Eslira": discord.Colour(0x93d3ec),
     "Aelsir": discord.Colour(0xe59556),
     "Irales": discord.Colour(0xab74c8),
-    "Larise": discord.Colour(0xd9d278),
+    "Lairse": discord.Colour(0xd9d278),
     "Sareli": discord.Colour(0x686fbf),
+    "Noelle": discord.Colour(0xd4ef90),
 }
 
 
@@ -682,9 +683,6 @@ async def side(ctx, arg: str):
     else:
         s = arg.title()+"side"
 
-    if arg.title() == "Simurgh" or arg.title() == "The":
-        s = "The Simurgh"
-
     if s in skybox_roles.keys():
         prev_role = ""
         for role_name in skybox_roles.keys():
@@ -696,12 +694,14 @@ async def side(ctx, arg: str):
 
         role = discord.utils.get(ctx.guild.roles, name=s)
         if role is not None:
-            if prev_role == "Ziva" and s == "Drakeside":
+            if prev_role == "Nixside" and s == "Drakeside":
                 await ctx.send("You know, Ziva, you can't really learn drakeside boxsignal this way!")
 
-            if s == "The Simurgh":
+            if s == "Simurgh":
                 await ctx.send("THE SIMURGH")
                 await ctx.send("IS HERE")
+            elif s == "Spaceside":
+                await ctx.send("/-//-/- /-//-/ //-/-/-/-")
 
             await user.add_roles(role)
             await ctx.send("You're now a {}!".format(s))
@@ -720,5 +720,10 @@ async def side_delete(ctx):
             await role.delete()
     await ctx.send("Deleted all 'side' roles.")
 
+@bot.command(hidden=True)
+@discord.ext.commands.guild_only()
+async def migrate(ctx):
+    role = discord.utils.get(ctx.guild.roles, name="The Simurgh")
+    await role.edit(name="Simurgh")
 
 bot.run(TOKEN.strip())
