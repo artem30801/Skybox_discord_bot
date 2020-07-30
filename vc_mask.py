@@ -43,6 +43,7 @@ def sentence_match(*wordlist, wordnum=5):
 
 if __name__ == "__main__":
     word = input("Spacetlak mask to find: ")
-    print(*sentence_match(*word.split(), wordnum=20), sep='\n')
+    for i, line in enumerate(sentence_match(*word.split(), wordnum=20), start=1):
+        print(i, *line)
     #result = list(mask_match(word))
     #print("Total words found: {} \n	100 first words are: {}".format(len(result), result[:100]))

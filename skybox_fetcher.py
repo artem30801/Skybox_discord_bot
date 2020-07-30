@@ -33,7 +33,7 @@ def process_gif(region):
 
 def save_gif(frames, path, timing=None):
     if timing is None:
-        timing = [700]
+        timing = [1000]
     if len(timing) == 1:
         timing = timing[0]
     frames[0].save(path, append_images=frames[1:], save_all=True, duration=timing, loop=0)
@@ -120,6 +120,8 @@ async def pull_comic(pages_dir='pages/', frames_dir='frames/', gif_dir='gif/', d
         await asyncio.sleep(0)
 
     print(data)
+    l = list(data.items())
+    print(*sorted(l, key=lambda x: x[1][1]), sep='\n')
     with open(os.path.abspath(databse), 'wb') as f:
         pickle.dump([arcs, data], f)
 
