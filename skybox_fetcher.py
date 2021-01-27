@@ -91,8 +91,8 @@ async def pull_comic(pages_dir='pages/', frames_dir='frames/', gif_dir='gif/', d
                 data[arcs[0], titles[2]] = (0, 0)
 
             img_link = bs.find_all('img', {'id': 'comicimage'})[0]['src']
-            print('Downloading:', page_number, url + img_link)
-            r = requests.get(url + img_link, stream=True)  # get file stream
+            print('Downloading:', page_number, img_link)
+            r = requests.get(img_link, stream=True)  # get file stream
 
             async with aiofiles.open(path, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=2048):
